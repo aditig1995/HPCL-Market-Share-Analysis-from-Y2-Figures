@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Market Share Analysis from Y2 Figures | HPCL Raipur Retail Region</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{
+  --blue:#003B7A; --blue-2:#0A4F9C; --blue-tint:#E8EFF8; --red:#E31E24;
+  --bg:#F3F5F8; --surface:#FFFFFF; --ink:#16212E; --muted:#5A6878; --line:#D9E0E8; --line-2:#EDF1F5;
+  --gain:#1C7A4A; --gain-bg:#E6F4EC; --loss:#C42B22; --loss-bg:#FCEBEA; --warn:#9A6200; --warn-bg:#FFF5E0;
+  --font:"IBM Plex Sans", "Segoe UI", Roboto, Arial, sans-serif;
+  --cond:"IBM Plex Sans Condensed", "Arial Narrow", "IBM Plex Sans", Arial, sans-serif;
+}
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--font);font-variant-numeric:tabular-nums}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue-2);outline-offset:2px}
+
+/* header */
+.top{background:var(--blue);color:#fff;border-bottom:4px solid var(--red)}
+.top-in{max-width:1560px;margin:0 auto;padding:14px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px;flex:1 1 420px;min-width:0}
+.mark{width:38px;height:38px;border-radius:50%;background:#fff;display:grid;place-items:center;flex:none}
+.mark span{font:700 13px var(--cond);color:var(--blue);letter-spacing:.02em}
+.brand h1{margin:0;font:600 19px/1.2 var(--font);letter-spacing:-.005em}
+.brand p{margin:2px 0 0;font-size:12.5px;color:#C9D7EA}
+.brand p.subt{color:#E3ECF7;font-size:13px}
+.brand h1{letter-spacing:.01em}
+/* loading */
+.loading{max-width:520px;margin:70px auto;background:#fff;border:1px solid var(--line);border-top:4px solid var(--blue);border-radius:6px;padding:28px 30px}
+.loading .lt{font:600 17px var(--font);color:var(--blue);margin:0 0 4px}
+.loading .ls{font-size:13px;color:var(--muted);margin:0 0 18px}
+.ldsteps{list-style:none;margin:0;padding:0}
+.ldsteps li{display:flex;align-items:center;gap:10px;padding:6px 0;color:#9AA5B1;font-size:14px}
+.ldsteps li .dot{width:16px;height:16px;border-radius:50%;border:2px solid #CBD4DE;flex:none;display:grid;place-items:center;font-size:10px;color:#fff}
+.ldsteps li.active{color:var(--ink);font-weight:500}
+.ldsteps li.active .dot{border-color:var(--blue);border-right-color:transparent;animation:spin .8s linear infinite}
+.ldsteps li.done{color:var(--ink)}
+.ldsteps li.done .dot{background:var(--gain);border-color:var(--gain)}
+.ldsteps li.done .dot::after{content:"✓"}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.ldsteps li.active .dot{animation:none;border-right-color:var(--blue)}}
+.empty .detail{color:var(--ink);font-size:14px;margin:-6px auto 18px}
+.empty code{background:var(--line-2);padding:1px 5px;border-radius:3px}
+.fsep{}
+@media (max-width:700px){.filters{position:static}.fsep{display:none}.f select{max-width:100%}}
+.appfoot{max-width:1560px;margin:0 auto;padding:14px 20px 24px;font-size:12px;color:#8592A0;border-top:1px solid var(--line)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;padding:7px 12px;border-radius:4px;cursor:pointer;font-weight:500;font-size:13px;white-space:nowrap}
+.btn:hover{background:rgba(255,255,255,.1)}
+.btn.solid{background:#fff;color:var(--blue);border-color:#fff}
+.btn.solid:hover{background:#E8EFF8}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* filter bar */
+.filters{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 1px 0 rgba(0,0,0,.02)}
+.filters-in{max-width:1560px;margin:0 auto;padding:10px 20px;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end}
+.f{display:flex;flex-direction:column;gap:3px;min-width:0}
+.f label{font-size:11.5px;color:var(--muted);font-weight:500}
+.f select{height:32px;border:1px solid var(--line);border-radius:4px;padding:0 26px 0 8px;background:#fff;min-width:90px;max-width:240px}
+.f select:disabled{background:var(--line-2);color:#98A3AF}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;height:32px}
+.seg button{border:0;background:#fff;padding:0 11px;cursor:pointer;font-size:13px;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--blue);color:#fff}
+.fsep{width:1px;align-self:stretch;background:var(--line-2)}
+.context{max-width:1560px;margin:0 auto;padding:0 20px 9px;font-size:12.5px;color:var(--muted)}
+.context b{color:var(--ink);font-weight:600}
+.context .w{color:var(--warn);font-weight:500}
+
+/* tabs */
+.tabs{max-width:1560px;margin:0 auto;padding:0 20px;display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line)}
+.tabs button{border:0;background:none;padding:12px 14px 10px;cursor:pointer;color:var(--muted);font-weight:500;border-bottom:3px solid transparent;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--blue);border-bottom-color:var(--red);font-weight:600}
+main{max-width:1560px;margin:0 auto;padding:18px 20px 60px}
+
+/* layout */
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g64{grid-template-columns:minmax(0,3fr) minmax(0,2fr)}
+@media (max-width:1100px){.g2,.g3,.g64{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;min-width:0}
+.panel h2{margin:0 0 2px;font:600 15px/1.3 var(--font);color:var(--ink)}
+.panel .sub{margin:0 0 12px;font-size:12.5px;color:var(--muted)}
+.ph{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.ph .seg{height:28px}.ph .seg button{font-size:12px;padding:0 9px}
+.section-title{font:600 13px var(--font);color:var(--blue);margin:22px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.chart{position:relative;height:300px}
+.chart.tall{height:380px}
+.mt{margin-top:16px}
+
+/* focus strip */
+.focus{display:flex;flex-wrap:wrap;gap:6px 22px;align-items:baseline;background:var(--blue-tint);border:1px solid #CFDCEC;border-radius:6px;padding:10px 14px;margin-bottom:16px;font-size:13px}
+.focus .geo{font-weight:600;color:var(--blue);font-size:15px}
+.focus span b{font-weight:600}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;background:var(--surface);border:1px solid var(--line);border-radius:6px;margin-bottom:16px}
+@media (max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{padding:14px 16px;border-right:1px solid var(--line-2);border-bottom:1px solid var(--line-2);min-width:0}
+.kpi:nth-child(4n){border-right:0}
+.kpi .l{font-size:12px;color:var(--muted);font-weight:500}
+.kpi .v{font:600 26px/1.15 var(--cond);margin:4px 0 2px;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .v small{font:500 13px var(--font);color:var(--muted);margin-left:3px}
+.kpi .s{font-size:12px;color:var(--muted)}
+.kpi.hp{border-left:3px solid var(--blue)}
+.pos{color:var(--gain)} .neg{color:var(--loss)} .na{color:#8C97A3}
+
+/* tables */
+.tw{overflow-x:auto;border:1px solid var(--line-2);border-radius:4px}
+table.t{border-collapse:collapse;width:100%;font-size:13px}
+table.t th{position:sticky;top:0;background:#F6F8FB;color:var(--muted);font-weight:600;font-size:12px;text-align:right;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+table.t th.l,table.t td.l{text-align:left}
+table.t th[data-sorted]::after{content:attr(data-sorted);margin-left:4px;color:var(--blue)}
+table.t td{padding:7px 10px;border-bottom:1px solid var(--line-2);text-align:right;white-space:nowrap}
+table.t tbody tr.click{cursor:pointer}
+table.t tbody tr.click:hover td{background:#F2F6FB}
+table.t tbody tr.sel td{box-shadow:inset 0 0 0 9999px rgba(0,59,122,.07)}
+table.t tbody tr.sel td:first-child{box-shadow:inset 3px 0 0 var(--blue),inset 0 0 0 9999px rgba(0,59,122,.07)}
+table.t tfoot td{font-weight:600;background:#F6F8FB;border-top:1px solid var(--line)}
+table.t td.hp{font-weight:600;color:var(--blue)}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;margin:1px 3px 1px 0;border:1px solid}
+.tag.ao{color:#7A4B00;border-color:#E9C27A;background:#FFF6E3}
+.tag.sl{color:var(--loss);border-color:#EDB3AF;background:var(--loss-bg)}
+.tag.gg{color:#6B3FA0;border-color:#CDB8E8;background:#F4EEFB}
+.tag.ld{color:var(--gain);border-color:#A9D6BC;background:var(--gain-bg)}
+.tag.df{color:#365A80;border-color:#B5C9DF;background:#EEF3F9}
+
+/* insights */
+.ins{margin:0;padding:0;list-style:none}
+.ins li{padding:9px 0 9px 14px;border-bottom:1px solid var(--line-2);position:relative;max-width:110ch}
+.ins li:last-child{border-bottom:0}
+.ins li::before{content:"";position:absolute;left:0;top:16px;width:6px;height:6px;border-radius:50%;background:var(--blue)}
+.ins li.bad::before{background:var(--loss)} .ins li.good::before{background:var(--gain)}
+.ins li b{font-weight:600}
+
+/* opportunity cards */
+.ocards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+@media (max-width:1100px){.ocards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.oc{border:1px solid var(--line);border-radius:6px;padding:12px;background:#fff}
+.oc h3{margin:0 0 2px;font:600 13.5px var(--font)}
+.oc .n{font:600 24px var(--cond)}
+.oc p{margin:2px 0 8px;font-size:12px;color:var(--muted)}
+.oc ul{margin:0;padding-left:16px;font-size:12.5px}
+
+/* standard REGION x OMC format */
+table.std th{text-align:center;cursor:default;padding:6px 7px}
+table.std thead tr:nth-child(3) th{cursor:pointer;font-size:11.5px}
+table.std th.rg{text-align:left;vertical-align:bottom;cursor:pointer;background:#EEF2F7;color:var(--ink)}
+table.std th.grp{color:#fff;background:var(--blue-2);font-size:12.5px;letter-spacing:.02em;border-left:2px solid #fff}
+table.std th.grp.g1{background:#3E6896}
+table.std th.grp.ghp{background:var(--blue);box-shadow:inset 0 -3px 0 var(--red)}
+table.std th.sg{background:#E6ECF4;color:var(--blue);font-size:11px;border-left:1px solid #fff}
+table.std th.g1:not(.grp){background:#EEF2F7}
+table.std th.bl,table.std td.bl{border-left:2px solid var(--line)}
+table.std td{padding:6px 7px}
+table.std td.rg{background:#FAFBFD;font-weight:500;position:sticky;left:0;z-index:1;box-shadow:inset -1px 0 0 var(--line)}
+table.std th.rg{position:sticky;left:0;z-index:3}
+table.std tfoot td.rg{background:#F6F8FB}
+table.std td.hpc{background-color:rgba(0,59,122,.035)}
+.stdnote{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+.stdnote span{max-width:110ch}
+/* validation */
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.vbox{border:1px solid var(--line);border-radius:4px;padding:10px 12px;background:#fff}
+.vbox .l{font-size:12px;color:var(--muted)} .vbox .v{font-weight:600;font-size:16px}
+.warnlist{margin:0;padding:0;list-style:none}
+.warnlist li{padding:7px 10px;border-left:3px solid var(--warn);background:var(--warn-bg);margin-bottom:6px;font-size:13px;border-radius:0 4px 4px 0}
+.warnlist li.ok{border-left-color:var(--gain);background:var(--gain-bg)}
+.warnlist li.info{border-left-color:var(--blue);background:var(--blue-tint)}
+.pass{color:var(--gain);font-weight:600}.fail{color:var(--loss);font-weight:600}
+code,.mono{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace;font-size:12px}
+.method{white-space:normal;max-width:420px;text-align:left!important;color:var(--muted);font-size:12px}
+
+/* empty state */
+.empty{max-width:640px;margin:60px auto;text-align:center;background:#fff;border:2px dashed #B9C8DA;border-radius:8px;padding:40px 28px}
+.empty.drag{border-color:var(--blue);background:var(--blue-tint)}
+.empty h2{margin:0 0 8px;font:600 20px var(--font);color:var(--blue)}
+.empty p{color:var(--muted);margin:6px auto 18px;max-width:52ch}
+.empty .go{background:var(--blue);color:#fff;border:0;padding:10px 18px;border-radius:4px;font-weight:600;cursor:pointer}
+.empty .err{color:var(--loss);margin-top:14px;font-weight:500}
+.note{font-size:12px;color:var(--muted);margin-top:8px}
+.hidden{display:none!important}
+#pdfStage{position:fixed;left:-10000px;top:0;width:1000px}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <div class="brand"><div class="mark" aria-hidden="true"><span>HP</span></div>
+    <div><h1 id="appTitle">MARKET SHARE ANALYSIS FROM Y2 FIGURES</h1><p class="subt">Raipur Retail Region | OMC Market Share &amp; Growth Analysis</p><p id="srcLine">Loading market data…</p></div></div>
+  <div class="actions">
+    <input type="file" id="fileIn" accept=".xlsx,.xls,.xlsm" hidden>
+    <button class="btn solid" id="btnUpload">Upload Excel</button>
+    <button class="btn" id="btnXlsx" disabled>Export Current Analysis to Excel</button>
+    <button class="btn" id="btnPdf" disabled>Export Management Report to PDF</button>
+  </div>
+</div></header>
+
+<div class="filters hidden" id="filters">
+  <div class="filters-in">
+    <div class="f"><label for="fFY">Financial year</label><select id="fFY"></select></div>
+    <div class="f"><label for="fLevel">Analysis level</label><select id="fLevel"><option value="DIST">District</option><option value="SA">Sales Area</option><option value="RO">Complete RO</option></select></div>
+    <div class="f"><label for="fSA">Sales Area</label><select id="fSA"></select></div>
+    <div class="f"><label for="fDist">District</label><select id="fDist"></select></div>
+    <div class="fsep"></div>
+    <div class="f"><label for="fProd">Product</label><select id="fProd"></select></div>
+    <div class="f"><label for="fUnit">Unit</label><select id="fUnit"></select></div>
+    <div class="fsep"></div>
+    <div class="f"><label>Period type</label><div class="seg" id="fPeriod"><button data-v="M">Monthly</button><button data-v="C">Cumulative</button></div></div>
+    <div class="f" id="fFromWrap"><label for="fFrom">From month</label><select id="fFrom"></select></div>
+    <div class="f"><label for="fTo" id="fToLbl">To month</label><select id="fTo"></select></div>
+    <div class="fsep"></div>
+    <div class="f"><label>Market view</label><div class="seg" id="fView"><button data-v="ALL">All OMCs</button><button data-v="PSU">PSU only</button></div></div>
+    <div class="f hidden" id="fCatWrap"><label for="fCat">Category</label><select id="fCat"></select></div>
+  </div>
+  <div class="context" id="context"></div>
+  <nav class="tabs" id="tabs" role="tablist">
+    <button data-tab="exec" role="tab">Executive Overview</button>
+    <button data-tab="share" role="tab">Market Share</button>
+    <button data-tab="district" role="tab">District Analysis</button>
+    <button data-tab="sa" role="tab">Sales Area Analysis</button>
+    <button data-tab="product" role="tab">Product Analysis</button>
+    <button data-tab="trend" role="tab">Trend Analysis</button>
+    <button data-tab="opp" role="tab">Opportunity Analysis</button>
+    <button data-tab="valid" role="tab">Data Validation</button>
+  </nav>
+</div>
+
+<main id="main">
+  <div class="loading" id="loading" role="status" aria-live="polite">
+    <p class="lt">MARKET SHARE ANALYSIS FROM Y2 FIGURES</p>
+    <p class="ls">Raipur Retail Region | OMC Market Share &amp; Growth Analysis</p>
+    <ol class="ldsteps" id="ldSteps"></ol>
+  </div>
+  <div class="empty hidden" id="empty">
+    <h2 id="emptyTitle">Load the OMC district-wise sales workbook</h2>
+    <p class="detail" id="emptyDetail"></p>
+    <p>Choose the Excel file with FY sheets (for example "FY 26-27" and "FY 25-26"). All volumes are read in MT, normalised, and every metric is recalculated in your browser. Nothing is stored or sent anywhere.</p>
+    <button class="go" id="btnUpload2">Upload Excel manually</button>
+    <div class="note">or drag and drop the .xlsx file here</div>
+    <div class="err" id="loadErr"></div>
+  </div>
+  <div id="view" class="hidden"></div>
+</main>
+<footer class="appfoot" id="appFoot"></footer>
+<div id="pdfStage" aria-hidden="true"></div>
+<script>
+/* =====================================================================
+   APP SETTINGS — the only place to change title, version and data file
+   ===================================================================== */
+const APP_TITLE = 'MARKET SHARE ANALYSIS FROM Y2 FIGURES';
+const APP_SUBTITLE = 'Raipur Retail Region | OMC Market Share & Growth Analysis';
+const APP_VERSION = '1.0.0';          // bump when you publish a new version of index.html
+// GitHub Pages default workbook.
+// Change this filename if the repository Excel file is renamed.
+// Always keep it relative ("./..."), never "/..." or a full https:// address.
+const DEFAULT_WORKBOOK = './market_share_data.xlsx';
+</script>
+<script>
+/* =====================================================================
+   MARKET SHARE CALCULATION ENGINE  (no DOM dependencies)
+   Raw Excel (MT) -> normalized records -> indexed cube -> metrics
+   ===================================================================== */
+const CONFIG = {
+  focusOMC: 'HPCL',
+  psuOMCs: ['HPCL', 'IOCL', 'BPCL'],
+  months: ['APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC','JAN','FEB','MAR'],
+  monthNames: ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'],
+  // Conversion factors FROM 1 MT
+  conv: { MS: { MT: 1, KL: 1.411 }, HSD: { MT: 1, KL: 1.210 }, CNG: { MT: 1, KG: 1000 }, CBG: { MT: 1, KG: 1000 } },
+  baseProducts: ['MS', 'HSD', 'CNG', 'CBG'],
+  groups: {
+    MS:  { label: 'MS', prods: ['MS'], units: ['MT', 'KL'] },
+    HSD: { label: 'HSD', prods: ['HSD'], units: ['MT', 'KL'] },
+    TMF: { label: 'TMF (MS+HSD)', prods: ['MS', 'HSD'], units: ['MT', 'KL'] },
+    GAS: { label: 'CNG+CBG', prods: ['CNG', 'CBG'], units: ['MT', 'KG'] },
+    ALL: { label: 'All Products', prods: ['MS', 'HSD', 'CNG', 'CBG'], units: ['MT'] }
+  },
+  nativeUnit: { MS: 'KL', HSD: 'KL', TMF: 'KL', GAS: 'KG', ALL: 'MT' },
+  // District -> Sales Area (district names normalized: upper case, "CT-" prefix and non-letters removed)
+  saMapping: [
+    ['Durg Retail S.A.', 'CT-BEMETARA'], ['Durg Retail S.A.', 'CT-DURG'],
+    ['Jagdalpur Retail S.A.', 'CT-BASTAR'], ['Jagdalpur Retail S.A.', 'CT-BIJAPUR'], ['Jagdalpur Retail S.A.', 'CT-DANTEWADA'],
+    ['Jagdalpur Retail S.A.', 'CT-KANKER'], ['Jagdalpur Retail S.A.', 'CT-KONDAGAON'], ['Jagdalpur Retail S.A.', 'CT-NARAINPUR'],
+    ['Jagdalpur Retail S.A.', 'CT-SUKMA'],
+    ['Raipur 1 Retail S.A.', 'CT-RAIPUR'],
+    ['Raipur 2 Retail S.A.', 'CT-BALOD'], ['Raipur 2 Retail S.A.', 'CT-DHAMTARI'], ['Raipur 2 Retail S.A.', 'CT-GARIYABAND'],
+    ['Rajnandgaon Retail S.A.', 'CT-KAWARDHA'], ['Rajnandgaon Retail S.A.', 'CT-KHAIRGARH CHHUIKHADAN GANDAI'],
+    ['Rajnandgaon Retail S.A.', 'CT-MOHLA MANPUR AMBAGARH CHOUKI'], ['Rajnandgaon Retail S.A.', 'CT-RAJNANDGAON']
+  ],
+  // OMC name normalisation (first match wins; unknown names are kept as-is, upper-cased)
+  omcRules: [
+    [/HINDUSTAN\s*PET|^HPC|^HP\b/, 'HPCL'], [/INDIAN\s*OIL|^IOC|^IOCL/, 'IOCL'], [/BHARAT\s*PET|^BPC/, 'BPCL'],
+    [/RELIANCE|JIO|^RIL\b|^RBML/, 'RIL'], [/NAYARA|ESSAR|^NEL\b/, 'NEL'], [/SHELL/, 'SHELL'], [/^MRPL|MANGALORE/, 'MRPL']
+  ],
+  // Product name -> base product (order matters: gases first, then diesel, then petrol)
+  // Product rules are tested on the name with ALL spaces/punctuation removed,
+  // so "C N G", "C.N.G", "H S D", "M.S." etc. are recognised (order matters).
+  productRules: [
+    [/CBG|COMPRESSEDBIO|BIOGAS|BIOCNG/, 'CBG'],
+    [/CNG|COMPRESSEDNAT|COMPRESSEDGAS|NATURALGAS/, 'CNG'],
+    [/HSD|DIESEL|TURBOJET|XTRAMILE|XTRAGREEN|HISPEED|HIGHSPEED/, 'HSD'],
+    [/^MS|MS$|PETROL|MOTORSPIRIT|GASOLINE|POWER|XP\d|SPEED|E20/, 'MS']
+  ],
+  // Optional explicit PRODCODE -> product overrides (take priority over names), e.g. { '10810': 'CNG' }
+  productCodeMap: {},
+  // header aliases (header text normalised to A-Z0-9 only)
+  fieldAliases: {
+    COMCODE: ['COMCODE', 'COMPANYCODE', 'OMCCODE', 'COCODE'],
+    COMNAME: ['COMNAME', 'COMPANYNAME', 'COMPANY', 'OMC', 'OMCNAME', 'CONAME'],
+    PRODCODE: ['PRODCODE', 'PRODUCTCODE', 'PRODUCTCD'],
+    PRODNAME: ['PRODNAME', 'PRODUCTNAME', 'PRODUCT', 'PROD'],
+    REGIONNAME: ['REGIONNAME', 'REGION'],
+    STATENAME: ['STATENAME', 'STATE'],
+    DISTCODE: ['DISTCODE', 'DISTRICTCODE'],
+    DISTNAME: ['DISTNAME', 'DISTRICTNAME', 'DISTRICT', 'DIST'],
+    CATEGORY: ['CATEGORY', 'CAT', 'SEGMENT']
+  }
+};
+
+const normHdr = s => String(s == null ? '' : s).toUpperCase().replace(/[^A-Z0-9]/g, '');
+const distKeyOf = s => String(s || '').toUpperCase().replace(/^\s*CT\s*[-_ ]\s*/, '').replace(/[^A-Z]/g, '');
+const SA_BY_DIST = {}; CONFIG.saMapping.forEach(([sa, d]) => { SA_BY_DIST[distKeyOf(d)] = { sa, name: d }; });
+const SA_ORDER = [...new Set(CONFIG.saMapping.map(r => r[0]))];
+
+function normOMC(name) {
+  const s = String(name || '').trim().toUpperCase();
+  for (const [re, v] of CONFIG.omcRules) if (re.test(s)) return v;
+  return s.replace(/\s+/g, ' ');
+}
+const compact = s => String(s == null ? '' : s).toUpperCase().replace(/[^A-Z0-9]/g, '');
+function normProduct(name, code) {
+  const c = String(code == null ? '' : code).trim();
+  if (c && CONFIG.productCodeMap[c]) return CONFIG.productCodeMap[c];
+  const s = compact(name);
+  for (const [re, v] of CONFIG.productRules) if (s && re.test(s)) return v;
+  const cc = compact(code);
+  if (cc && !/^\d+$/.test(cc)) for (const [re, v] of CONFIG.productRules) if (re.test(cc)) return v;
+  return null;
+}
+function toNum(v) {
+  if (v == null || v === '') return { n: 0, blank: true };
+  if (typeof v === 'number') return { n: isFinite(v) ? v : 0, blank: false };
+  const t = String(v).replace(/,/g, '').trim();
+  if (t === '' || t === '-') return { n: 0, blank: true };
+  const n = parseFloat(t);
+  return isNaN(n) ? { n: 0, blank: true, bad: true } : { n, blank: false };
+}
+function parseFYName(name) {
+  const m = String(name).match(/FY\s*'?\s*(\d{2,4})\s*[-–\/_ ]\s*(\d{2,4})/i);
+  if (!m) return null;
+  let a = +m[1]; if (a < 100) a += 2000;
+  const s = String(a).slice(2), e = String(a + 1).slice(2);
+  return { label: `FY ${s}-${e}`, short: `FY${s}-${e}`, startYear: a };
+}
+
+/* ---------- 1. PARSE + NORMALISE -------------------------------------- */
+function parseWorkbook(wb, XLSX) {
+  const ds = { fys: [], raw: [], warnings: [], info: [], omcs: [], districts: [], products: [], categories: [], sheetsIgnored: [] };
+  const distInfo = {}, omcSet = new Set(), prodSet = new Set(), catSet = new Set(), unmappedProducts = {}; const prodInv = {};
+  wb.SheetNames.forEach(sn => {
+    const fy = parseFYName(sn);
+    if (!fy) { ds.sheetsIgnored.push(sn); return; }
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: null, raw: true, blankrows: false });
+    // locate header row: must contain a company and district column plus >= 3 month columns
+    let hIdx = -1, colMap = null, monthCols = null;
+    for (let r = 0; r < Math.min(rows.length, 25); r++) {
+      const hdr = (rows[r] || []).map(normHdr);
+      const cm = {};
+      for (const [f, aliases] of Object.entries(CONFIG.fieldAliases)) {
+        let idx = -1;
+        for (const a of aliases) { idx = hdr.indexOf(a); if (idx >= 0) break; }
+        cm[f] = idx;
+      }
+      const mc = new Array(12).fill(-1);
+      hdr.forEach((h, i) => {
+        if (!h || h.startsWith('TOT')) return;
+        const mi = CONFIG.months.indexOf(h.slice(0, 3));
+        if (mi >= 0 && /^[A-Z]{3,9}\d{0,4}$/.test(h) && mc[mi] < 0) mc[mi] = i;
+      });
+      if (cm.COMNAME >= 0 && cm.DISTNAME >= 0 && cm.PRODNAME >= 0 && mc.filter(x => x >= 0).length >= 3) { hIdx = r; colMap = cm; monthCols = mc; break; }
+    }
+    if (hIdx < 0) { ds.warnings.push(`Sheet "${sn}": header row with company / product / district / month columns not found — sheet skipped.`); return; }
+    const missingMonths = monthCols.map((c, i) => c < 0 ? CONFIG.monthNames[i] : null).filter(Boolean);
+    if (missingMonths.length) ds.warnings.push(`Sheet "${sn}": month columns not found for ${missingMonths.join(', ')} (treated as no data).`);
+    const fyRec = { ...fy, sheet: sn, records: 0, skippedTotals: 0, monthTotals: new Array(12).fill(0), monthHasValue: new Array(12).fill(false), latestMonth: -1, actualMonths: [] };
+    for (let r = hIdx + 1; r < rows.length; r++) {
+      const row = rows[r]; if (!row) continue;
+      const g = f => colMap[f] >= 0 ? row[colMap[f]] : null;
+      const comName = g('COMNAME'), distName = g('DISTNAME'), prodName = g('PRODNAME');
+      if (comName == null && distName == null && prodName == null) continue;
+      const txt = [comName, distName, prodName].map(x => String(x || '').toUpperCase());
+      if (txt.some(t => /\b(GRAND\s*)?TOTAL\b|SUB\s*TOTAL/.test(t))) { fyRec.skippedTotals++; continue; }
+      if (!comName || !distName) { continue; }
+      const omc = normOMC(comName);
+      const prod = normProduct(prodName, g('PRODCODE'));
+      const dKey = distKeyOf(distName);
+      const map = SA_BY_DIST[dKey];
+      const cat = g('CATEGORY') == null ? '(blank)' : String(g('CATEGORY')).trim() || '(blank)';
+      const vals = new Array(12).fill(0);
+      monthCols.forEach((c, i) => { if (c >= 0) { const t = toNum(row[c]); vals[i] = t.n; if (!t.blank && t.n !== 0) fyRec.monthHasValue[i] = true; fyRec.monthTotals[i] += t.n; } });
+      { const ik = `${fyRec.label}|${g('PRODCODE') ?? ''}|${String(prodName ?? '').trim()}`; const e = (prodInv[ik] ||= { fy: fyRec.label, code: g('PRODCODE'), name: String(prodName ?? '').trim(), mapped: prod, rows: 0, mt: 0, dists: new Set() }); e.rows++; e.mt += vals.reduce((a, b) => a + b, 0); e.dists.add(String(distName).trim()); }
+      if (!prod) { const k = `${prodName} (code ${g('PRODCODE') ?? '-'})`; unmappedProducts[k] = (unmappedProducts[k] || 0) + vals.reduce((a, b) => a + b, 0); continue; }
+      if (!distInfo[dKey]) distInfo[dKey] = { key: dKey, name: map ? map.name : String(distName).trim(), code: g('DISTCODE'), sa: map ? map.sa : 'Unmapped', mapped: !!map };
+      omcSet.add(omc); prodSet.add(prod); catSet.add(cat);
+      ds.raw.push({ fy: fyRec.label, omcRaw: String(comName).trim(), omc, prodCode: g('PRODCODE'), prodRaw: String(prodName ?? '').trim(), prod, dist: dKey, distRaw: String(distName).trim(), cat, vals, sheet: sn, sheetRow: r + 1 });
+      fyRec.records++;
+    }
+    // latest actual month = last month carrying any non-zero value; trailing zero months are "future" (not zero sales)
+    for (let i = 11; i >= 0; i--) if (fyRec.monthHasValue[i]) { fyRec.latestMonth = i; break; }
+    fyRec.actualMonths = fyRec.latestMonth >= 0 ? [...Array(fyRec.latestMonth + 1).keys()] : [];
+    const gaps = fyRec.actualMonths.filter(i => !fyRec.monthHasValue[i]);
+    if (gaps.length) ds.warnings.push(`${fyRec.label}: no data in ${gaps.map(i => CONFIG.monthNames[i]).join(', ')} although later months have data (treated as zero).`);
+    if (fyRec.skippedTotals) ds.info.push(`${fyRec.label}: ${fyRec.skippedTotals} total/sub-total row(s) excluded to avoid double counting.`);
+    ds.fys.push(fyRec);
+  });
+  ds.fys.sort((a, b) => a.startYear - b.startYear);
+  const seen = {}; ds.fys = ds.fys.filter(f => { if (seen[f.label]) { ds.warnings.push(`Duplicate sheet for ${f.label} ("${f.sheet}") ignored.`); return false; } return seen[f.label] = true; });
+  const keepSheets = new Set(ds.fys.map(f => f.sheet)); ds.raw = ds.raw.filter(r => keepSheets.has(r.sheet));
+  Object.entries(unmappedProducts).forEach(([k, v]) => ds.warnings.push(`Unrecognised product "${k}" excluded (total ${v.toFixed(2)} MT). Add a rule in CONFIG.productRules or CONFIG.productCodeMap if it belongs to MS/HSD/CNG/CBG.`));
+  ds.productInventory = Object.values(prodInv).map(e => ({ ...e, dists: e.dists.size })).sort((a, b) => a.fy.localeCompare(b.fy) || String(a.mapped).localeCompare(String(b.mapped)) || String(a.code).localeCompare(String(b.code)));
+  ds.unmappedProductCount = Object.keys(unmappedProducts).length;
+  ds.districtInfo = distInfo;
+  ds.districts = Object.values(distInfo).sort((a, b) => (SA_ORDER.indexOf(a.sa) - SA_ORDER.indexOf(b.sa)) || a.name.localeCompare(b.name));
+  ds.districts.filter(d => !d.mapped).forEach(d => ds.warnings.push(`District "${d.name}" has no Sales Area mapping — shown under "Unmapped" and excluded from Complete RO unless enabled.`));
+  CONFIG.saMapping.forEach(([sa, d]) => { if (!distInfo[distKeyOf(d)]) ds.warnings.push(`Mapped district ${d} (${sa}) not found in the workbook.`); });
+  const pref = [CONFIG.focusOMC, ...CONFIG.psuOMCs.filter(x => x !== CONFIG.focusOMC)];
+  ds.omcs = [...omcSet].sort((a, b) => { const ia = pref.indexOf(a), ib = pref.indexOf(b); return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.localeCompare(b); });
+  ds.products = CONFIG.baseProducts.filter(p => prodSet.has(p));
+  CONFIG.baseProducts.filter(p => !prodSet.has(p)).forEach(p => ds.warnings.push(`Product ${p} not found in any sheet.`));
+  ds.categories = [...catSet].sort();
+  if (!ds.omcs.includes(CONFIG.focusOMC)) ds.warnings.push(`${CONFIG.focusOMC} not found in the data — HPCL metrics will be blank.`);
+  if (!ds.fys.length) ds.warnings.push('No sheet named like "FY 26-27" was found.');
+  return ds;
+}
+
+/* ---------- 2. INDEX (cube) -------------------------------------------- */
+// cube[fy][distKey][omc][prod] = Float64Array(12) in MT. Duplicate product codes are SUMMED here.
+function buildCube(ds, catFilter) {
+  const cube = {};
+  for (const r of ds.raw) {
+    if (catFilter && catFilter !== 'ALL' && r.cat !== catFilter) continue;
+    const a = ((cube[r.fy] ||= {})[r.dist] ||= {});
+    const b = (a[r.omc] ||= {});
+    const arr = (b[r.prod] ||= new Float64Array(12));
+    for (let i = 0; i < 12; i++) arr[i] += r.vals[i];
+  }
+  return cube;
+}
+
+/* ---------- 3. CALCULATION LAYER --------------------------------------- */
+const growthPct = (c, p) => (p > 0 && c != null) ? (c - p) / p * 100 : null;
+const sharePct = (v, t) => (t > 0) ? v / t * 100 : null;
+const diff = (a, b) => (a == null || b == null) ? null : a - b;
+const factor = (prod, unit) => (CONFIG.conv[prod] && CONFIG.conv[prod][unit] != null) ? CONFIG.conv[prod][unit] : null;
+
+class Engine {
+  constructor(ds) { this.ds = ds; this.cat = 'ALL'; this.cube = buildCube(ds, 'ALL'); this.cache = new Map(); this.includeUnmapped = false; }
+  setCategory(c) { this.cat = c; this.cube = buildCube(this.ds, c); this.cache.clear(); }
+  setIncludeUnmapped(v) { this.includeUnmapped = !!v; this.cache.clear(); }
+  fy(label) { return this.ds.fys.find(f => f.label === label); }
+  prevFY(label) { const f = this.fy(label); return f ? this.ds.fys.find(x => x.startYear === f.startYear - 1) || null : null; }
+  roDistricts() { return this.ds.districts.filter(d => d.mapped || this.includeUnmapped).map(d => d.key); }
+  saList() { const s = SA_ORDER.filter(sa => this.ds.districts.some(d => d.sa === sa)); if (this.includeUnmapped && this.ds.districts.some(d => !d.mapped)) s.push('Unmapped'); return s; }
+  saDistricts(sa) { return this.ds.districts.filter(d => d.sa === sa && (d.mapped || this.includeUnmapped)).map(d => d.key); }
+  omcsInView(view) { return view === 'PSU' ? this.ds.omcs.filter(o => CONFIG.psuOMCs.includes(o)) : this.ds.omcs.slice(); }
+  // Core aggregator: volume in the requested unit (per-product conversion applied BEFORE summing)
+  vol(fyLabel, dists, omcs, prods, months, unit) {
+    const c = this.cube[fyLabel]; if (!c) return 0;
+    let s = 0;
+    for (const d of dists) { const cd = c[d]; if (!cd) continue;
+      for (const o of omcs) { const co = cd[o]; if (!co) continue;
+        for (const p of prods) { const arr = co[p]; if (!arr) continue; const f = factor(p, unit); if (f == null) continue;
+          for (const m of months) s += arr[m] * f; } } }
+    return s;
+  }
+  /* Full OMC table for a geography & period (cached). ctx = {fy, months, group, unit, view} */
+  metrics(dists, ctx) {
+    const key = ['M', ctx.fy, ctx.months.join(','), ctx.group, ctx.unit, ctx.view, dists.join(',')].join('|');
+    if (this.cache.has(key)) return this.cache.get(key);
+    const prods = CONFIG.groups[ctx.group].prods;
+    const py = this.prevFY(ctx.fy);
+    const pyOK = !!py && ctx.months.every(m => m <= py.latestMonth);
+    const omcs = this.omcsInView(ctx.view);
+    const rows = omcs.map(o => ({ omc: o, cur: this.vol(ctx.fy, dists, [o], prods, ctx.months, ctx.unit), prev: pyOK ? this.vol(py.label, dists, [o], prods, ctx.months, ctx.unit) : null }));
+    const totCur = rows.reduce((a, r) => a + r.cur, 0);
+    const totPrev = pyOK ? rows.reduce((a, r) => a + r.prev, 0) : null;
+    rows.forEach(r => { r.share = sharePct(r.cur, totCur); r.prevShare = pyOK ? sharePct(r.prev, totPrev) : null; r.growth = pyOK ? growthPct(r.cur, r.prev) : null; r.shareChg = diff(r.share, r.prevShare); });
+    const ranked = rows.slice().sort((a, b) => b.cur - a.cur);
+    ranked.forEach((r, i) => r.rank = r.cur > 0 ? i + 1 : null);
+    const hp = rows.find(r => r.omc === CONFIG.focusOMC) || { omc: CONFIG.focusOMC, cur: 0, prev: pyOK ? 0 : null, share: sharePct(0, totCur), prevShare: pyOK ? sharePct(0, totPrev) : null, growth: null, shareChg: null, rank: null };
+    const mktGrowth = pyOK ? growthPct(totCur, totPrev) : null;
+    const res = { rows, ranked, totCur, totPrev, mktGrowth, hp, hpVsMkt: diff(hp.growth, mktGrowth), pyOK, pyLabel: py ? py.label : null, nOMC: rows.filter(r => r.cur > 0).length };
+    this.cache.set(key, res);
+    return res;
+  }
+  // Monthly or cumulative (from April) series for the full FY; null for months without actual data
+  series(dists, ctx, mode) {
+    const f = this.fy(ctx.fy); const py = this.prevFY(ctx.fy);
+    return CONFIG.months.map((_, i) => {
+      const months = mode === 'C' ? [...Array(i + 1).keys()] : [i];
+      const hasCur = f && i <= f.latestMonth;
+      const hasPrev = py && i <= py.latestMonth;
+      const m = this.metrics(dists, { ...ctx, months });
+      return { i, months, hasCur, hasPrev, m: hasCur ? m : null, prevOnly: !hasCur && hasPrev ? m : null, mAll: m };
+    });
+  }
+  // Rows for District / Sales Area breakdown tables
+  entityRows(type, ctx, saFilter) {
+    let ents;
+    if (type === 'sa') ents = this.saList().map(sa => ({ id: sa, name: sa, type: 'sa', dists: this.saDistricts(sa) }));
+    else ents = this.ds.districts.filter(d => (d.mapped || this.includeUnmapped) && (!saFilter || saFilter === 'ALL' || d.sa === saFilter)).map(d => ({ id: d.key, name: d.name, sa: d.sa, type: 'district', dists: [d.key] }));
+    const ro = this.metrics(this.roDistricts(), ctx);
+    const roShare = ro.hp.share;
+    const rows = ents.map(e => {
+      const m = this.metrics(e.dists, ctx);
+      const r = { id: e.id, name: e.name, sa: e.sa || e.name, type, dists: e.dists, mktCur: m.totCur, mktPrev: m.totPrev, hpCur: m.hp.cur, hpPrev: m.hp.prev,
+        share: m.hp.share, prevShare: m.hp.prevShare, shareChg: m.hp.shareChg, hpGrowth: m.hp.growth, mktGrowth: m.mktGrowth, hpVsMkt: m.hpVsMkt, rank: m.hp.rank, roShare };
+      r.shareGap = (r.share != null && roShare != null) ? roShare - r.share : null;
+      r.opportunity = (r.share != null && roShare != null && r.share < roShare) ? r.mktCur * (roShare - r.share) / 100 : null;
+      return r;
+    });
+    // classification
+    const vols = rows.map(r => r.mktCur).filter(v => v > 0).sort((a, b) => a - b);
+    const median = vols.length ? vols[Math.floor((vols.length - 1) / 2)] : 0;
+    rows.forEach(r => {
+      r.tags = [];
+      if (r.share != null && roShare != null && r.share < roShare && r.mktCur >= median && r.mktCur > 0) r.tags.push('Attack Opportunity');
+      if (r.shareChg != null && r.shareChg < 0) r.tags.push('Share Loss');
+      if (r.mktGrowth != null && r.hpGrowth != null && r.mktGrowth > r.hpGrowth) r.tags.push('Growth Gap');
+      if (r.share != null && roShare != null && r.share >= roShare && r.shareChg != null && r.shareChg > 0) r.tags.push('Leadership');
+      if (r.share != null && roShare != null && r.share >= roShare && r.mktGrowth != null && r.mktGrowth < 0) r.tags.push('Defensive Market');
+    });
+    return { rows, ro, roShare, median };
+  }
+  // Raw-row lookup used by validation (independent of the cube)
+  rawRows(fy, omc, prod, distKey) { return this.ds.raw.filter(r => r.fy === fy && (!omc || r.omc === omc) && (!prod || r.prod === prod) && (!distKey || r.dist === distKey) && (this.cat === 'ALL' || r.cat === this.cat)); }
+}
+
+if (typeof module !== 'undefined') module.exports = { CONFIG, parseWorkbook, buildCube, Engine, growthPct, sharePct, distKeyOf, SA_ORDER, SA_BY_DIST, normOMC, normProduct };
+
+</script>
+<script>
+/* =====================================================================
+   DASHBOARD APPLICATION LAYER
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const MN = CONFIG.monthNames;
+const range = (a, b) => { const r = []; for (let i = a; i <= b; i++) r.push(i); return r; };
+let DS = null, EN = null, FILE = '';
+const S = { fy: null, level: 'RO', sa: 'ALL', dist: 'ALL', group: 'TMF', unit: 'KL', period: 'C', from: 0, to: 0, view: 'ALL', cat: 'ALL',
+  tab: 'exec', trendMode: 'M', vtGroup: null, vtUnit: null, vtOmc: 'HPCL', glLevel: null, atkLevel: 'district', prodUnit: 'NATIVE', mpMode: null,
+  vDist: null, vMonth: null, lk: { fy: null, omc: null, prod: 'MS', dist: null } };
+
+const OMC_COLORS = { HPCL: '#003B7A', IOCL: '#E87722', BPCL: '#C9A000', RIL: '#2A9D8F', NEL: '#8E5BB5', SHELL: '#D64545', MRPL: '#6D8A3E' };
+const EXTRA = ['#6C7A89', '#A0522D', '#5D8AA8', '#B5651D', '#7D6B91', '#4F7942'];
+const omcColor = (o, i) => OMC_COLORS[o] || EXTRA[i % EXTRA.length];
+
+/* ---------- formatting ---------- */
+const nf0 = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 });
+const nf2 = new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtVol = (v, unit) => v == null || !isFinite(v) ? 'N/A' : (Math.abs(v) < 100 && v !== 0 ? nf2.format(v) : nf0.format(v)) + (unit ? ' ' + unit : '');
+const fmtPct = (v, dp = 2) => v == null || !isFinite(v) ? 'N/A' : v.toFixed(dp) + '%';
+const sgn = v => v > 0 ? '+' : v < 0 ? '-' : '';
+const fmtG = (v, dp = 1) => v == null || !isFinite(v) ? 'N/A' : sgn(v) + Math.abs(v).toFixed(dp) + '%';
+const fmtPP = (v, dp = 2) => v == null || !isFinite(v) ? 'N/A' : sgn(v) + Math.abs(v).toFixed(dp) + ' pp';
+const cls = v => v == null || !isFinite(v) ? 'na' : v > 0 ? 'pos' : v < 0 ? 'neg' : '';
+const span = (txt, v) => `<span class="${cls(v)}">${txt}</span>`;
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const tagCls = { 'Attack Opportunity': 'ao', 'Share Loss': 'sl', 'Growth Gap': 'gg', 'Leadership': 'ld', 'Defensive Market': 'df' };
+
+/* ---------- derived selections ---------- */
+function ctx(over = {}) {
+  const months = S.period === 'M' ? [S.to] : range(S.from, S.to);
+  return { fy: S.fy, months, group: S.group, unit: S.unit, view: S.view, ...over };
+}
+function geo() {
+  if (S.level === 'DIST' && S.dist !== 'ALL') { const d = DS.districtInfo[S.dist]; return { kind: 'district', label: d.name, dists: [d.key], sa: d.sa }; }
+  if ((S.level === 'SA' || S.level === 'DIST') && S.sa !== 'ALL') return { kind: 'sa', label: S.sa, dists: EN.saDistricts(S.sa), sa: S.sa };
+  return { kind: 'ro', label: 'Complete Raipur RO', dists: EN.roDistricts() };
+}
+const unitOf = c => c.unit;
+const prodLabel = g => CONFIG.groups[g].label;
+function mLabel(fyLabel, i) { const f = EN.fy(fyLabel); if (!f) return MN[i]; return `${MN[i]}-${String(i <= 8 ? f.startYear : f.startYear + 1).slice(2)}`; }
+function periodLabel(fyLabel, months) {
+  if (!fyLabel) return 'N/A';
+  const f = EN.fy(fyLabel);
+  if (months.length === 1) return mLabel(fyLabel, months[0]);
+  return `${MN[months[0]]}–${MN[months[months.length - 1]]} ${f ? f.short : fyLabel}`;
+}
+function periodText(c = ctx()) { const py = EN.prevFY(c.fy); return { cur: periodLabel(c.fy, c.months), prev: py ? periodLabel(py.label, c.months) : 'not available' }; }
+const viewLabel = () => S.view === 'PSU' ? 'PSU view (HPCL+IOCL+BPCL = 100%)' : 'All-market view (all OMCs = 100%)';
+const breakdownLevel = () => S.level === 'SA' ? 'sa' : 'district';
+
+/* ---------- charts registry ---------- */
+const CH = {};
+function destroyCharts() { Object.keys(CH).forEach(k => { try { CH[k].destroy(); } catch (e) { } delete CH[k]; }); }
+function mkChart(id, cfg) { const el = $(id); if (!el) return; if (CH[id]) CH[id].destroy(); CH[id] = new Chart(el, cfg); return CH[id]; }
+if (window.Chart) {
+  Chart.defaults.font.family = '"IBM Plex Sans","Segoe UI",Arial,sans-serif';
+  Chart.defaults.font.size = 12; Chart.defaults.color = '#5A6878'; Chart.defaults.animation = false;
+  Chart.defaults.maintainAspectRatio = false; Chart.defaults.plugins.legend.labels.boxWidth = 12;
+  Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(16,28,44,.94)'; Chart.defaults.plugins.tooltip.padding = 10;
+  Chart.defaults.plugins.tooltip.titleFont = { weight: '600' };
+}
+// standard tooltip lines
+function tipLines(o) {
+  return [`Period: ${o.period}`, `Volume: ${fmtVol(o.vol, o.unit)}`, `Market share: ${fmtPct(o.share)}`, `PY volume: ${fmtVol(o.prev, o.unit)}`, `Growth: ${fmtG(o.growth)}`, `Share change: ${fmtPP(o.shareChg)}`];
+}
+const tipTitle = (omc, g, geoLabel) => `${omc} | ${prodLabel(g)} | ${geoLabel}`;
+
+/* quadrant plugin for growth scatter */
+const quadPlugin = { id: 'quad', beforeDatasetsDraw(chart, _a, o) {
+  if (!o || o.x == null || o.y == null) return;
+  const { ctx: c, chartArea: a, scales: { x, y } } = chart;
+  const px = Math.min(Math.max(x.getPixelForValue(o.x), a.left), a.right), py = Math.min(Math.max(y.getPixelForValue(o.y), a.top), a.bottom);
+  c.save();
+  c.fillStyle = 'rgba(196,43,34,.05)'; c.fillRect(px, py, a.right - px, a.bottom - py);
+  c.fillStyle = 'rgba(28,122,74,.05)'; c.fillRect(a.left, a.top, px - a.left, py - a.top);
+  c.strokeStyle = '#8A97A6'; c.setLineDash([4, 4]); c.lineWidth = 1;
+  c.beginPath(); c.moveTo(px, a.top); c.lineTo(px, a.bottom); c.moveTo(a.left, py); c.lineTo(a.right, py); c.stroke();
+  // parity line y = x
+  const lo = Math.max(x.min, y.min), hi = Math.min(x.max, y.max);
+  if (hi > lo) { c.strokeStyle = 'rgba(0,59,122,.35)'; c.setLineDash([2, 3]); c.beginPath(); c.moveTo(x.getPixelForValue(lo), y.getPixelForValue(lo)); c.lineTo(x.getPixelForValue(hi), y.getPixelForValue(hi)); c.stroke(); }
+  c.setLineDash([]); c.font = '600 11px "IBM Plex Sans",Arial'; c.fillStyle = '#5A6878';
+  c.textAlign = 'right'; c.fillText('High market / high HPCL: growing strongly', a.right - 6, a.top + 14);
+  c.fillStyle = '#C42B22'; c.fillText('High market / low HPCL: PRIORITY OPPORTUNITY', a.right - 6, a.bottom - 8);
+  c.textAlign = 'left'; c.fillStyle = '#1C7A4A'; c.fillText('Low market / high HPCL: share capture', a.left + 6, a.top + 14);
+  c.fillStyle = '#5A6878'; c.fillText('Low market / low HPCL: defensive / slow', a.left + 6, a.bottom - 8);
+  c.restore();
+} };
+
+/* ---------- sortable table ---------- */
+const TBL = {};
+function mountTable(elId, cols, rows, opts = {}) { TBL[elId] = { cols, rows, opts, sort: (TBL[elId] && TBL[elId].sort) || opts.sort || null }; drawTable(elId); }
+function heatBg(c, v, r) {
+  if (v == null || !isFinite(v) || !r) return '';
+  if (c.heat === 'div') { const a = r.maxAbs > 0 ? 0.06 + 0.34 * Math.abs(v) / r.maxAbs : 0; return v > 0 ? `background:rgba(28,122,74,${a.toFixed(3)})` : v < 0 ? `background:rgba(196,43,34,${a.toFixed(3)})` : ''; }
+  if (c.heat === 'seq') { const a = r.hi > r.lo ? 0.04 + 0.30 * (v - r.lo) / (r.hi - r.lo) : 0.1; return `background:rgba(0,59,122,${a.toFixed(3)})`; }
+  return '';
+}
+function drawTable(elId) {
+  const t = TBL[elId], el = $(elId); if (!t || !el) return;
+  let rows = t.rows.slice();
+  if (t.sort) { const { key, dir } = t.sort; rows.sort((a, b) => { const va = a[key], vb = b[key]; if (va == null && vb == null) return 0; if (va == null) return 1; if (vb == null) return -1; return (typeof va === 'string' ? va.localeCompare(vb) : va - vb) * dir; }); }
+  const rng = {};
+  t.cols.forEach(c => { if (c.heat) { const vs = rows.map(r => r[c.key]).filter(v => v != null && isFinite(v)); rng[c.key] = vs.length ? { maxAbs: Math.max(...vs.map(Math.abs)), lo: Math.min(...vs), hi: Math.max(...vs) } : null; } });
+  const th = t.cols.map(c => `<th class="${c.l ? 'l' : ''}" data-k="${c.key}" ${t.sort && t.sort.key === c.key ? `data-sorted="${t.sort.dir > 0 ? '▲' : '▼'}"` : ''} title="Sort by ${esc(c.label)}">${c.label}</th>`).join('');
+  const td = (c, r) => { const v = r[c.key]; const txt = c.fmt ? c.fmt(v, r) : esc(v); return `<td class="${c.l ? 'l' : ''} ${c.cls ? c.cls(v, r) : ''}" style="${heatBg(c, v, rng[c.key])}">${txt}</td>`; };
+  const body = rows.map((r, i) => `<tr data-i="${i}" class="${t.opts.onRow ? 'click' : ''} ${t.opts.isSel && t.opts.isSel(r) ? 'sel' : ''}">${t.cols.map(c => td(c, r)).join('')}</tr>`).join('') || `<tr><td class="l" colspan="${t.cols.length}">No data for the current selection.</td></tr>`;
+  const foot = (t.opts.foot || []).map(r => `<tr>${t.cols.map(c => `<td class="${c.l ? 'l' : ''}">${c.fmt ? c.fmt(r[c.key], r) : esc(r[c.key])}</td>`).join('')}</tr>`).join('');
+  el.innerHTML = `<div class="tw"><table class="t"><thead><tr>${th}</tr></thead><tbody>${body}</tbody>${foot ? `<tfoot>${foot}</tfoot>` : ''}</table></div>`;
+  el.querySelectorAll('th').forEach(h => h.onclick = () => { const k = h.dataset.k; t.sort = t.sort && t.sort.key === k ? { key: k, dir: -t.sort.dir } : { key: k, dir: typeof (t.rows[0] || {})[k] === 'string' ? 1 : -1 }; drawTable(elId); });
+  if (t.opts.onRow) el.querySelectorAll('tbody tr[data-i]').forEach(tr => tr.onclick = () => t.opts.onRow(rows[+tr.dataset.i]));
+}
+
+/* ---------- interactions: drill to district / SA (stays on current tab) ---------- */
+function drillDistrict(key) {
+  const d = DS.districtInfo[key]; if (!d) return;
+  S.level = 'DIST'; S.dist = key; if (S.sa !== 'ALL' && S.sa !== d.sa) S.sa = d.sa;
+  syncFilters(); render();
+}
+function drillSA(sa) { S.level = 'SA'; S.sa = sa; S.dist = 'ALL'; syncFilters(); render(); }
+function drillEntity(r) { r.type === 'sa' ? drillSA(r.id) : drillDistrict(r.id); }
+const isSelEntity = r => (r.type === 'district' && S.level === 'DIST' && S.dist === r.id) || (r.type === 'sa' && S.level === 'SA' && S.sa === r.id);
+
+/* =====================================================================
+   FILTER BAR
+   ===================================================================== */
+function opt(v, t, sel, dis) { return `<option value="${esc(v)}" ${sel ? 'selected' : ''} ${dis ? 'disabled' : ''}>${esc(t)}</option>`; }
+function setSeg(id, v) { $(id).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === v)); }
+function syncFilters() {
+  const f = EN.fy(S.fy);
+  $('fFY').innerHTML = DS.fys.slice().reverse().map(x => opt(x.label, x.label, x.label === S.fy)).join('');
+  $('fLevel').value = S.level;
+  const sas = EN.saList();
+  if (S.sa !== 'ALL' && !sas.includes(S.sa)) S.sa = 'ALL';
+  $('fSA').innerHTML = opt('ALL', 'All Sales Areas', S.sa === 'ALL') + sas.map(s => opt(s, s, s === S.sa)).join('');
+  $('fSA').disabled = S.level === 'RO';
+  const dl = DS.districts.filter(d => (d.mapped || EN.includeUnmapped) && (S.sa === 'ALL' || d.sa === S.sa));
+  if (S.dist !== 'ALL' && !dl.some(d => d.key === S.dist)) S.dist = 'ALL';
+  $('fDist').innerHTML = opt('ALL', 'All districts', S.dist === 'ALL') + dl.map(d => opt(d.key, d.name, d.key === S.dist)).join('');
+  $('fDist').disabled = S.level !== 'DIST';
+  const gs = Object.keys(CONFIG.groups).filter(g => CONFIG.groups[g].prods.some(p => DS.products.includes(p)));
+  if (!gs.includes(S.group)) S.group = gs[0] || 'ALL';
+  $('fProd').innerHTML = gs.map(g => opt(g, prodLabel(g), g === S.group)).join('');
+  const units = CONFIG.groups[S.group].units; if (!units.includes(S.unit)) S.unit = units.includes(CONFIG.nativeUnit[S.group]) ? CONFIG.nativeUnit[S.group] : units[0];
+  $('fUnit').innerHTML = units.map(u => opt(u, u, u === S.unit)).join('');
+  const latest = f ? f.latestMonth : -1;
+  if (S.to > latest) S.to = Math.max(latest, 0); if (S.from > S.to) S.from = 0;
+  const mopts = sel => MN.map((m, i) => opt(i, mLabel(S.fy, i) + (i > latest ? ' (no data)' : ''), i === sel, i > latest)).join('');
+  $('fFrom').innerHTML = MN.map((m, i) => opt(i, mLabel(S.fy, i), i === S.from, i > S.to)).join('');
+  $('fTo').innerHTML = mopts(S.to);
+  $('fFromWrap').classList.toggle('hidden', S.period === 'M');
+  $('fToLbl').textContent = S.period === 'M' ? 'Month' : 'To month';
+  setSeg('fPeriod', S.period); setSeg('fView', S.view);
+  $('fCatWrap').classList.toggle('hidden', DS.categories.length <= 1);
+  $('fCat').innerHTML = opt('ALL', 'All categories', S.cat === 'ALL') + DS.categories.map(c => opt(c, c, c === S.cat)).join('');
+}
+function wireFilters() {
+  $('fFY').onchange = e => { S.fy = e.target.value; const f = EN.fy(S.fy); S.to = Math.max(f.latestMonth, 0); S.from = 0; syncFilters(); render(); };
+  $('fLevel').onchange = e => { S.level = e.target.value; if (S.level === 'RO') { S.sa = 'ALL'; S.dist = 'ALL'; } if (S.level === 'SA') S.dist = 'ALL'; syncFilters(); render(); };
+  $('fSA').onchange = e => { S.sa = e.target.value; S.dist = 'ALL'; syncFilters(); render(); };
+  $('fDist').onchange = e => { S.dist = e.target.value; syncFilters(); render(); };
+  $('fProd').onchange = e => { S.group = e.target.value; syncFilters(); render(); };
+  $('fUnit').onchange = e => { S.unit = e.target.value; render(); };
+  $('fFrom').onchange = e => { S.from = +e.target.value; syncFilters(); render(); };
+  $('fTo').onchange = e => { S.to = +e.target.value; if (S.from > S.to) S.from = S.to; syncFilters(); render(); };
+  $('fPeriod').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.period = b.dataset.v; syncFilters(); render(); };
+  $('fView').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.view = b.dataset.v; syncFilters(); render(); };
+  $('fCat').onchange = e => { S.cat = e.target.value; EN.setCategory(S.cat); render(); };
+  $('tabs').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.tab = b.dataset.tab; render(); window.scrollTo({ top: 0 }); };
+}
+
+/* =====================================================================
+   RENDER
+   ===================================================================== */
+function render() {
+  if (!EN) return;
+  document.querySelectorAll('#tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === S.tab));
+  const c = ctx(), g = geo(), m = EN.metrics(g.dists, c), pt = periodText(c);
+  let warn = '';
+  if (DS.unmappedProductCount) warn += ` <span class="w">${DS.unmappedProductCount} product name(s) in the workbook were not recognised and are excluded — see Data Validation.</span>`;
+  if (!m.pyOK) warn += ` <span class="w">Previous-year comparison unavailable for this period — growth and share change shown as N/A.</span>`;
+  else if (m.totCur === 0) warn += ` <span class="w">No volume for this product / geography in the selected period.</span>`;
+  $('context').innerHTML = `Showing <b>${esc(prodLabel(S.group))}</b> in <b>${S.unit}</b> for <b>${esc(g.label)}</b>, ${S.period === 'M' ? 'month' : 'cumulative period'} <b>${pt.cur}</b> compared with <b>${pt.prev}</b>. ${viewLabel()}.${warn}`;
+  destroyCharts();
+  const v = $('view');
+  const R = { exec: renderExec, share: renderShare, district: renderDistrict, sa: renderSA, product: renderProduct, trend: renderTrend, opp: renderOpp, valid: renderValid }[S.tab];
+  R(v, c, g, m);
+}
+
+function focusStrip(g, m, c) {
+  return `<div class="focus"><span class="geo">${esc(g.label)}</span>
+   <span>HPCL share <b>${fmtPct(m.hp.share)}</b> (PY ${fmtPct(m.hp.prevShare)}, ${span(fmtPP(m.hp.shareChg), m.hp.shareChg)})</span>
+   <span>HPCL growth <b>${span(fmtG(m.hp.growth), m.hp.growth)}</b> vs market <b>${span(fmtG(m.mktGrowth), m.mktGrowth)}</b></span>
+   <span>Rank <b>${m.hp.rank ? '#' + m.hp.rank : 'N/A'}</b> of ${m.nOMC}</span></div>`;
+}
+
+function kpiCards(m, c, g) {
+  const u = c.unit, leader = m.ranked[0];
+  const faster = m.hpVsMkt == null ? '' : m.hpVsMkt >= 0 ? 'HPCL growing faster than market' : 'HPCL growing slower than market';
+  const card = (l, v, s, hp) => `<div class="kpi ${hp ? 'hp' : ''}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+  return `<div class="kpis">
+   ${card('Total market volume', `${fmtVol(m.totCur)}<small>${u}</small>`, `PY ${fmtVol(m.totPrev, u)}`)}
+   ${card('HPCL volume', `${fmtVol(m.hp.cur)}<small>${u}</small>`, `PY ${fmtVol(m.hp.prev, u)}`, 1)}
+   ${card('HPCL market share', fmtPct(m.hp.share), `PY ${fmtPct(m.hp.prevShare)}`, 1)}
+   ${card('HPCL volume growth', span(fmtG(m.hp.growth, 2), m.hp.growth), 'Change in HPCL volume vs PY')}
+   ${card('Market growth', span(fmtG(m.mktGrowth, 2), m.mktGrowth), 'Change in total market volume vs PY')}
+   ${card('HPCL vs market growth', span(fmtPP(m.hpVsMkt), m.hpVsMkt), faster || 'HPCL growth minus market growth')}
+   ${card('HPCL share change', span(fmtPP(m.hp.shareChg), m.hp.shareChg), `${fmtPct(m.hp.prevShare)} → ${fmtPct(m.hp.share)}`, 1)}
+   ${card('HPCL rank', m.hp.rank ? `#${m.hp.rank}<small>of ${m.nOMC}</small>` : 'N/A', leader && leader.omc !== CONFIG.focusOMC ? `Leader ${leader.omc} at ${fmtPct(leader.share)}` : 'HPCL is market leader')}
+  </div>`;
+}
+
+/* ---------- reusable chart builders ---------- */
+function chartOMCShare(id, m, c, g) {
+  const rows = m.rows.filter(r => r.cur > 0 || (r.prev || 0) > 0);
+  mkChart(id, { type: 'bar', data: { labels: rows.map(r => r.omc), datasets: [
+    { label: 'Current ' + periodText(c).cur, data: rows.map(r => r.share), backgroundColor: rows.map((r, i) => omcColor(r.omc, i)) },
+    { label: 'PY ' + periodText(c).prev, data: rows.map(r => r.prevShare), backgroundColor: rows.map((r, i) => omcColor(r.omc, i) + '55') }] },
+    options: { indexAxis: 'y', scales: { x: { title: { display: true, text: 'Market share %' }, ticks: { callback: v => v + '%' } } },
+      plugins: { tooltip: { callbacks: { title: it => tipTitle(rows[it[0].dataIndex].omc, c.group, g.label), label: it => { const r = rows[it.dataIndex]; const isPY = it.datasetIndex === 1; return isPY ? [`Period: ${periodText(c).prev}`, `PY volume: ${fmtVol(r.prev, c.unit)}`, `PY share: ${fmtPct(r.prevShare)}`] : tipLines({ period: periodText(c).cur, vol: r.cur, unit: c.unit, share: r.share, prev: r.prev, growth: r.growth, shareChg: r.shareChg }); } } } } } });
+}
+function chartShareTrend(id, dists, c, g, mode, omcFilter) {
+  const ser = EN.series(dists, c, mode);
+  let omcs = EN.omcsInView(c.view); if (omcFilter) omcs = omcs.filter(omcFilter);
+  const py = EN.prevFY(c.fy);
+  const ds = omcs.map((o, i) => ({ label: o, data: ser.map(s => s.m ? (s.m.rows.find(r => r.omc === o) || {}).share ?? null : null), borderColor: omcColor(o, i), backgroundColor: omcColor(o, i), borderWidth: o === CONFIG.focusOMC ? 3 : 1.6, pointRadius: o === CONFIG.focusOMC ? 3.5 : 2, spanGaps: false, tension: 0 }));
+  if (py) ds.push({ label: `HPCL ${py.label}`, data: ser.map(s => s.hasPrev ? s.mAll.hp.prevShare : null), borderColor: '#003B7A', borderDash: [5, 4], borderWidth: 1.5, pointRadius: 0, backgroundColor: '#fff' });
+  const lbl = i => mode === 'C' ? (i === 0 ? mLabel(c.fy, 0) : `${MN[0]}–${MN[i]}`) : mLabel(c.fy, i);
+  mkChart(id, { type: 'line', data: { labels: MN.map((_, i) => lbl(i)), datasets: ds },
+    options: { interaction: { mode: 'nearest', intersect: false }, scales: { y: { title: { display: true, text: 'Market share %' }, ticks: { callback: v => v + '%' } } },
+      plugins: { tooltip: { callbacks: { title: it => { const d = it[0]; const o = ds[d.datasetIndex].label; return tipTitle(o.startsWith('HPCL FY') ? 'HPCL (PY)' : o, c.group, g.label); },
+        label: it => { const s = ser[it.dataIndex]; const o = ds[it.datasetIndex].label; const per = (mode === 'C' ? 'Cum. ' : '') + periodLabel(c.fy, s.months);
+          if (o.startsWith('HPCL FY')) return [`Period: ${py ? periodLabel(py.label, s.months) : ''}`, `PY volume: ${fmtVol(s.mAll.hp.prev, c.unit)}`, `PY share: ${fmtPct(s.mAll.hp.prevShare)}`];
+          const r = s.m.rows.find(x => x.omc === o); return tipLines({ period: per, vol: r.cur, unit: c.unit, share: r.share, prev: r.prev, growth: r.growth, shareChg: r.shareChg }); } } } } } });
+}
+function chartGrowthScatter(id, er, c, level) {
+  const rows = er.rows.filter(r => r.hpGrowth != null && r.mktGrowth != null);
+  const max = Math.max(1, ...rows.map(r => r.mktCur));
+  const pts = rows.map(r => ({ x: r.mktGrowth, y: r.hpGrowth, r: 4 + 16 * Math.sqrt(r.mktCur / max), row: r }));
+  const xs = pts.map(p => p.x).concat([er.ro.mktGrowth ?? 0]), ys = pts.map(p => p.y).concat([er.ro.hp.growth ?? 0]);
+  const pad = (a) => { const lo = Math.min(...a), hi = Math.max(...a), p = Math.max((hi - lo) * 0.15, 2); return [Math.floor(lo - p), Math.ceil(hi + p)]; };
+  const [x0, x1] = pad(xs), [y0, y1] = pad(ys);
+  mkChart(id, { type: 'bubble', plugins: [quadPlugin], data: { datasets: [{ label: level === 'sa' ? 'Sales Areas' : 'Districts', data: pts,
+      backgroundColor: pts.map(p => p.row.shareChg == null ? 'rgba(120,130,140,.5)' : p.row.shareChg >= 0 ? 'rgba(0,59,122,.55)' : 'rgba(227,30,36,.55)'), borderColor: '#fff', borderWidth: 1 }] },
+    options: { scales: { x: { min: x0, max: x1, title: { display: true, text: 'Market growth %' }, ticks: { callback: v => v + '%' } }, y: { min: y0, max: y1, title: { display: true, text: 'HPCL growth %' }, ticks: { callback: v => v + '%' } } },
+      onClick: (e, els) => { if (els.length) drillEntity(pts[els[0].index].row); },
+      plugins: { quad: { x: er.ro.mktGrowth, y: er.ro.hp.growth }, legend: { display: false },
+        tooltip: { callbacks: { title: it => tipTitle('HPCL', c.group, pts[it[0].dataIndex].row.name), label: it => { const r = pts[it.dataIndex].row; return [...tipLines({ period: periodText(c).cur, vol: r.hpCur, unit: c.unit, share: r.share, prev: r.hpPrev, growth: r.hpGrowth, shareChg: r.shareChg }), `Market volume: ${fmtVol(r.mktCur, c.unit)}`, `Market growth: ${fmtG(r.mktGrowth)}`, 'Click to drill down']; } } } } } });
+}
+
+/* ---------- table column sets ---------- */
+function entityCols(level, u) {
+  return [
+    { key: 'name', label: level === 'sa' ? 'Sales Area' : 'District', l: 1 },
+    ...(level === 'district' ? [{ key: 'sa', label: 'Sales Area', l: 1 }] : []),
+    { key: 'hpCur', label: `HPCL volume (${u})`, fmt: v => fmtVol(v) },
+    { key: 'mktCur', label: `Market volume (${u})`, fmt: v => fmtVol(v), heat: 'seq' },
+    { key: 'share', label: 'HPCL share', fmt: v => fmtPct(v) },
+    { key: 'prevShare', label: 'PY share', fmt: v => fmtPct(v) },
+    { key: 'shareChg', label: 'Share change', fmt: v => fmtPP(v), heat: 'div' },
+    { key: 'hpGrowth', label: 'HPCL growth', fmt: v => fmtG(v), cls: cls },
+    { key: 'mktGrowth', label: 'Market growth', fmt: v => fmtG(v), cls: cls },
+    { key: 'hpVsMkt', label: 'HPCL vs market', fmt: v => fmtPP(v), heat: 'div' }
+  ];
+}
+function footRow(er, level, u) {
+  const m = er.ro;
+  return { name: 'Complete RO', sa: '', hpCur: m.hp.cur, mktCur: m.totCur, share: m.hp.share, prevShare: m.hp.prevShare, shareChg: m.hp.shareChg, hpGrowth: m.hp.growth, mktGrowth: m.mktGrowth, hpVsMkt: m.hpVsMkt };
+}
+function gainLose(er, n) {
+  const v = er.rows.filter(r => r.shareChg != null && r.mktCur > 0);
+  const gain = v.filter(r => r.shareChg > 0).sort((a, b) => b.shareChg - a.shareChg).slice(0, n).map((r, i) => ({ ...r, rk: i + 1 }));
+  const lose = v.filter(r => r.shareChg < 0).sort((a, b) => a.shareChg - b.shareChg).slice(0, n).map((r, i) => ({ ...r, rk: i + 1 }));
+  return { gain, lose };
+}
+const glCols = level => [{ key: 'rk', label: 'Rank', l: 1 }, { key: 'name', label: level === 'sa' ? 'Sales Area' : 'District', l: 1 }, { key: 'prevShare', label: 'Previous share', fmt: v => fmtPct(v) }, { key: 'share', label: 'Current share', fmt: v => fmtPct(v) }, { key: 'shareChg', label: 'Change', fmt: v => fmtPP(v), cls: cls }];
+function attackRows(er, n) { return er.rows.filter(r => r.opportunity != null && r.opportunity > 0).sort((a, b) => b.opportunity - a.opportunity).slice(0, n).map((r, i) => ({ ...r, rk: i + 1 })); }
+const atkCols = (level, u, compact) => [{ key: 'rk', label: 'Rank', l: 1 }, { key: 'name', label: level === 'sa' ? 'Sales Area' : 'District', l: 1 },
+  { key: 'mktCur', label: `Market volume (${u})`, fmt: v => fmtVol(v) }, ...(compact ? [] : [{ key: 'hpCur', label: `HPCL volume (${u})`, fmt: v => fmtVol(v) }]),
+  { key: 'share', label: 'HPCL share', fmt: v => fmtPct(v) }, ...(compact ? [] : [{ key: 'roShare', label: 'RO HPCL share', fmt: v => fmtPct(v) }]),
+  { key: 'shareGap', label: 'Share gap', fmt: v => v == null ? 'N/A' : v.toFixed(2) + ' pp' },
+  ...(compact ? [] : [{ key: 'mktGrowth', label: 'Market growth', fmt: v => fmtG(v), cls: cls }, { key: 'hpGrowth', label: 'HPCL growth', fmt: v => fmtG(v), cls: cls }]),
+  { key: 'opportunity', label: `Indicative opportunity (${u})`, fmt: v => fmtVol(v), heat: 'seq' }];
+
+/* ---------- product summary rows ---------- */
+function productRows(g, c, mode) {
+  return ['MS', 'HSD', 'TMF', 'GAS'].filter(k => CONFIG.groups[k].prods.some(p => DS.products.includes(p))).map(k => {
+    const unit = mode === 'MT' ? 'MT' : CONFIG.nativeUnit[k];
+    const m = EN.metrics(g.dists, { ...c, group: k, unit });
+    return { key: k, product: prodLabel(k), unit, mktCur: m.totCur, mktPrev: m.totPrev, mktGrowth: m.mktGrowth, hpCur: m.hp.cur, hpPrev: m.hp.prev, hpGrowth: m.hp.growth, share: m.hp.share, prevShare: m.hp.prevShare, shareChg: m.hp.shareChg, hpVsMkt: m.hpVsMkt, rank: m.hp.rank, m };
+  });
+}
+const prodCols = [{ key: 'product', label: 'Product', l: 1 }, { key: 'unit', label: 'Unit', l: 1 },
+  { key: 'hpCur', label: 'HPCL current', fmt: v => fmtVol(v) }, { key: 'hpPrev', label: 'HPCL PY', fmt: v => fmtVol(v) }, { key: 'hpGrowth', label: 'HPCL growth', fmt: v => fmtG(v), cls: cls },
+  { key: 'mktGrowth', label: 'Market growth', fmt: v => fmtG(v), cls: cls },
+  { key: 'share', label: 'HPCL share', fmt: v => fmtPct(v) }, { key: 'prevShare', label: 'PY share', fmt: v => fmtPct(v) }, { key: 'shareChg', label: 'Share change', fmt: v => fmtPP(v), heat: 'div' }];
+
+/* ---------- dynamic insights ---------- */
+function buildInsights(c, g, m) {
+  const out = [], u = c.unit, pt = periodText(c);
+  if (!m.pyOK) { out.push({ t: `Previous-year data is not available for ${pt.cur}, so growth and share-change insights cannot be calculated. HPCL share is <b>${fmtPct(m.hp.share)}</b> of a ${fmtVol(m.totCur, u)} market.`, k: '' }); return out; }
+  out.push({ k: m.hp.shareChg >= 0 ? 'good' : 'bad', t: `In ${esc(g.label)} (${prodLabel(c.group)}, ${pt.cur}), the market ${m.mktGrowth >= 0 ? 'grew' : 'declined'} by <b>${fmtG(m.mktGrowth, 2)}</b> while HPCL ${m.hp.growth == null ? 'had no PY base' : (m.hp.growth >= 0 ? 'grew' : 'declined') + ' by <b>' + fmtG(m.hp.growth, 2) + '</b>'}, resulting in a <b>${fmtPP(m.hp.shareChg)}</b> change in HPCL market share (${fmtPct(m.hp.prevShare)} → ${fmtPct(m.hp.share)}).` });
+  const comp = m.rows.filter(r => r.omc !== CONFIG.focusOMC && r.shareChg != null);
+  CONFIG.psuOMCs.filter(o => o !== CONFIG.focusOMC).forEach(o => { const r = m.rows.find(x => x.omc === o); if (!r || r.share == null) return;
+    const gap = m.hp.share - r.share, gapPrev = (m.hp.prevShare != null && r.prevShare != null) ? m.hp.prevShare - r.prevShare : null;
+    out.push({ k: gapPrev != null && gap >= gapPrev ? 'good' : 'bad', t: `Against <b>${o}</b>: ${o} holds ${fmtPct(r.share)} (${fmtPP(r.shareChg)}); HPCL is ${gap >= 0 ? 'ahead by' : 'behind by'} <b>${Math.abs(gap).toFixed(2)} pp</b>${gapPrev != null ? `, ${Math.abs(gap) === Math.abs(gapPrev) ? 'unchanged' : (gap - gapPrev > 0 ? 'improving' : 'worsening')} from ${gapPrev >= 0 ? '+' : '-'}${Math.abs(gapPrev).toFixed(2)} pp last year` : ''}.` }); });
+  const top = comp.concat(m.hp.shareChg != null ? [m.hp] : []).sort((a, b) => b.shareChg - a.shareChg)[0];
+  if (top && top.shareChg > 0) out.push({ k: top.omc === CONFIG.focusOMC ? 'good' : 'bad', t: `<b>${top.omc}</b> gained the most market share: <b>${fmtPP(top.shareChg)}</b>, to ${fmtPct(top.share)}.` });
+  // product drivers
+  const pr = productRows(g, c, 'NATIVE').filter(r => ['MS', 'HSD', 'GAS'].includes(r.key) && r.shareChg != null);
+  if (pr.length > 1) { const b = pr.slice().sort((a, b) => b.shareChg - a.shareChg); out.push({ k: b[0].shareChg >= 0 ? 'good' : '', t: `Product view: <b>${b[0].product}</b> is the strongest driver (${fmtPP(b[0].shareChg)} share, ${fmtG(b[0].hpGrowth)} HPCL growth)${b[b.length - 1].shareChg < 0 ? `; <b>${b[b.length - 1].product}</b> is dragging (${fmtPP(b[b.length - 1].shareChg)})` : ''}.` }); }
+  // geography
+  const saR = EN.entityRows('sa', c).rows.filter(r => r.shareChg != null);
+  if (saR.length > 1) { const s = saR.slice().sort((a, b) => b.shareChg - a.shareChg); out.push({ k: '', t: `Best Sales Area on share movement: <b>${esc(s[0].name)}</b> (${fmtPP(s[0].shareChg)}, share ${fmtPct(s[0].share)}). ${s[s.length - 1].shareChg < 0 ? `Weakest: <b>${esc(s[s.length - 1].name)}</b> (${fmtPP(s[s.length - 1].shareChg)}).` : 'No Sales Area lost share.'}` }); }
+  const er = EN.entityRows('district', c, g.kind === 'sa' ? g.sa : (g.kind === 'district' ? g.sa : 'ALL'));
+  const dl = er.rows.filter(r => r.shareChg != null && r.mktCur > 0);
+  const worst = dl.slice().sort((a, b) => a.shareChg - b.shareChg)[0];
+  if (worst && worst.shareChg < 0) {
+    const lostVol = worst.mktCur * -worst.shareChg / 100;
+    out.push({ k: 'bad', t: `District concern: <b>${esc(worst.name)}</b> recorded the largest HPCL share decline of <b>${fmtPP(worst.shareChg)}</b> (${fmtPct(worst.prevShare)} → ${fmtPct(worst.share)}), equivalent to about ${fmtVol(lostVol, u)} at current market size.` });
+  }
+  const atk = attackRows(er, 1)[0];
+  if (atk) out.push({ k: '', t: `Opportunity: <b>${esc(atk.name)}</b> has a market of ${fmtVol(atk.mktCur, u)} and HPCL share of ${fmtPct(atk.share)}, below the RO average of ${fmtPct(er.roShare)}. Closing the gap is worth an indicative <b>${fmtVol(atk.opportunity, u)}</b>.` });
+  const gapN = dl.filter(r => r.tags.includes('Growth Gap'));
+  if (gapN.length) out.push({ k: 'bad', t: `In <b>${gapN.length} of ${dl.length}</b> districts the market grew faster than HPCL${gapN.length <= 5 ? ': ' + gapN.map(r => esc(r.name)).join(', ') : ''}.` });
+  return out;
+}
+const insightsHTML = list => `<ul class="ins">${list.map(i => `<li class="${i.k}">${i.t}</li>`).join('')}</ul>`;
+
+function trendToggle(id) { return `<div class="seg" data-tt="${id}"><button data-v="M" aria-pressed="${S.trendMode === 'M'}">Monthly</button><button data-v="C" aria-pressed="${S.trendMode === 'C'}">Cumulative</button></div>`; }
+function wireTrendToggles() { document.querySelectorAll('[data-tt]').forEach(el => el.onclick = e => { const b = e.target.closest('button'); if (!b) return; S.trendMode = b.dataset.v; render(); }); }
+function levelToggle(attr, cur) { return `<div class="seg" data-lt="${attr}"><button data-v="district" aria-pressed="${cur === 'district'}">District</button><button data-v="sa" aria-pressed="${cur === 'sa'}">Sales Area</button></div>`; }
+function wireLevelToggles() { document.querySelectorAll('[data-lt]').forEach(el => el.onclick = e => { const b = e.target.closest('button'); if (!b) return; S[el.dataset.lt] = b.dataset.v; render(); }); }
+
+/* ---------- TAB 1: EXECUTIVE ---------- */
+function renderExec(v, c, g, m) {
+  const lvl = S.glLevel || breakdownLevel();
+  const er = EN.entityRows(lvl, c, lvl === 'district' && g.kind !== 'ro' ? g.sa : 'ALL');
+  const erScatter = EN.entityRows(breakdownLevel(), c, breakdownLevel() === 'district' && g.kind !== 'ro' ? g.sa : 'ALL');
+  const pt = periodText(c);
+  v.innerHTML = `${kpiCards(m, c, g)}
+  <div class="grid g2">
+    <div class="panel"><h2>OMC market share</h2><p class="sub">${esc(g.label)}, ${pt.cur} vs ${pt.prev}. ${S.view === 'PSU' ? 'PSU view' : 'All OMCs'}.</p><div class="chart"><canvas id="cOMC"></canvas></div></div>
+    <div class="panel"><div class="ph"><div><h2>HPCL share trend</h2><p class="sub">${S.trendMode === 'C' ? 'Cumulative from April, share = cumulative OMC volume ÷ cumulative market volume' : 'Month-wise share'}; dashed line = HPCL previous year.</p></div>${trendToggle('x')}</div><div class="chart"><canvas id="cTrend"></canvas></div></div>
+  </div>
+  <div class="grid g2 mt">
+    <div class="panel"><h2>HPCL vs market growth</h2><p class="sub">${breakdownLevel() === 'sa' ? 'Sales Areas' : 'Districts'}; bubble size = market volume, blue = share gain, red = share loss. Dividers at RO averages, diagonal = parity. Click a bubble to drill down.</p><div class="chart tall"><canvas id="cScatter"></canvas></div></div>
+    <div class="panel"><h2>Dynamic executive insights</h2><div id="ins"></div></div>
+  </div>
+  <div class="panel mt"><h2>Product performance</h2><p class="sub">${esc(g.label)}, ${pt.cur} vs ${pt.prev}. MS/HSD/TMF in KL, CNG+CBG in KG. Click a product to select it.</p><div id="tProd"></div></div>
+  <div class="grid g2 mt">
+    <div class="panel"><div class="ph"><h2>Top share gainers</h2>${levelToggle('glLevel', lvl)}</div><div id="tGain"></div></div>
+    <div class="panel"><div class="ph"><h2>Top share losers</h2></div><div id="tLose"></div></div>
+  </div>
+  <div class="panel mt"><h2>Top attack opportunities</h2><p class="sub">Indicative opportunity volume = market × (RO HPCL share − district share), shown only where the district is below the RO share. Not guaranteed incremental volume.</p><div id="tAtk"></div></div>`;
+  chartOMCShare('cOMC', m, c, g);
+  chartShareTrend('cTrend', g.dists, c, g, S.trendMode);
+  chartGrowthScatter('cScatter', erScatter, c, breakdownLevel());
+  mountStd('tProd', stdProductRows(g, c, 'NATIVE'), { regionLabel: 'PRODUCT', curLbl: pt.cur, prevLbl: pt.prev, onRow: r => { S.group = r.key; syncFilters(); render(); }, isSel: r => r.key === S.group });
+  const gl = gainLose(er, 5);
+  mountTable('tGain', glCols(lvl), gl.gain, { onRow: drillEntity, isSel: isSelEntity });
+  mountTable('tLose', glCols(lvl), gl.lose, { onRow: drillEntity, isSel: isSelEntity });
+  const erA = EN.entityRows('district', c, g.kind !== 'ro' ? g.sa : 'ALL');
+  mountTable('tAtk', atkCols('district', c.unit, false), attackRows(erA, 5), { onRow: drillEntity, isSel: isSelEntity });
+  $('ins').innerHTML = insightsHTML(buildInsights(c, g, m));
+  wireTrendToggles(); wireLevelToggles();
+}
+
+/* ---------- TAB 2: MARKET SHARE ---------- */
+function omcTableRows(m) {
+  const rows = m.rows.map(r => ({ ...r }));
+  if (S.view === 'ALL') {
+    const oth = m.rows.filter(r => !CONFIG.psuOMCs.includes(r.omc));
+    if (oth.length) { const cur = oth.reduce((a, r) => a + r.cur, 0), prev = m.pyOK ? oth.reduce((a, r) => a + r.prev, 0) : null;
+      const share = sharePct(cur, m.totCur), prevShare = m.pyOK ? sharePct(prev, m.totPrev) : null;
+      rows.push({ omc: 'Other OMCs (' + oth.map(r => r.omc).join(', ') + ')', cur, prev, share, prevShare, growth: m.pyOK ? growthPct(cur, prev) : null, shareChg: diff(share, prevShare), other: 1 }); }
+  }
+  return rows;
+}
+function omcCols(u) { return [{ key: 'omc', label: 'OMC', l: 1, cls: (v) => v === CONFIG.focusOMC ? 'hp' : '' }, { key: 'rank', label: 'Rank', fmt: v => v ?? '' }, { key: 'cur', label: `Current volume (${u})`, fmt: v => fmtVol(v) }, { key: 'share', label: 'Current share', fmt: v => fmtPct(v) },
+  { key: 'prev', label: `Previous volume (${u})`, fmt: v => fmtVol(v) }, { key: 'prevShare', label: 'Previous share', fmt: v => fmtPct(v) }, { key: 'growth', label: 'Volume growth', fmt: v => fmtG(v, 2), cls: cls }, { key: 'shareChg', label: 'Share change', fmt: v => fmtPP(v), heat: 'div' }]; }
+function renderShare(v, c, g, m) {
+  const pt = periodText(c);
+  v.innerHTML = `${focusStrip(g, m, c)}
+  <div class="panel"><h2>OMC comparison</h2><p class="sub">${esc(g.label)}, ${prodLabel(c.group)}, ${pt.cur} vs ${pt.prev}. ${viewLabel()}. Click a row to drill down.</p><div id="tOMC"></div></div>
+  <div class="grid g64 mt">
+    <div class="panel"><div class="ph"><div><h2>Market share trend by OMC</h2><p class="sub">${S.trendMode === 'C' ? 'Cumulative from April (cumulative volume ÷ cumulative market — never averaged monthly shares)' : 'Monthly share'}.</p></div>${trendToggle('s')}</div><div class="chart tall"><canvas id="cTrend2"></canvas></div></div>
+    <div class="panel"><h2>Current vs previous share</h2><p class="sub">${pt.cur} vs ${pt.prev}</p><div class="chart tall"><canvas id="cOMC2"></canvas></div></div>
+  </div>
+  <div class="panel mt"><h2>HPCL share gap to competitors by month</h2><p class="sub">HPCL share minus competitor share (pp). Positive = HPCL ahead.</p><div class="chart"><canvas id="cGap"></canvas></div></div>`;
+  const gr0 = stdGeoRows(g, c); mountStd('tOMC', gr0.rows, { unit: c.unit, regionLabel: g.kind === 'ro' ? 'SALES AREA' : 'DISTRICT', curLbl: pt.cur, prevLbl: pt.prev, foot: gr0.foot, onRow: drillEntity, isSel: isSelEntity });
+  chartShareTrend('cTrend2', g.dists, c, g, S.trendMode);
+  chartOMCShare('cOMC2', m, c, g);
+  const ser = EN.series(g.dists, c, S.trendMode);
+  const comps = EN.omcsInView(c.view).filter(o => o !== CONFIG.focusOMC);
+  mkChart('cGap', { type: 'bar', data: { labels: MN.map((_, i) => mLabel(c.fy, i)), datasets: comps.map((o, i) => ({ label: 'vs ' + o, backgroundColor: omcColor(o, i + 1), data: ser.map(s => { if (!s.m) return null; const h = s.m.hp.share, r = (s.m.rows.find(x => x.omc === o) || {}).share; return h == null || r == null ? null : h - r; }) })) },
+    options: { scales: { y: { title: { display: true, text: 'pp' } } }, plugins: { tooltip: { callbacks: { label: it => `HPCL ${it.dataset.label}: ${fmtPP(it.raw)}` } } } } });
+  wireTrendToggles();
+}
+
+/* ---------- TAB 3/4: DISTRICT & SALES AREA ---------- */
+function renderEntityTab(v, c, g, m, level) {
+  const er = EN.entityRows(level, c, level === 'district' ? (S.sa || 'ALL') : 'ALL');
+  const u = c.unit, pt = periodText(c);
+  const title = level === 'sa' ? 'Sales Area-wise market share' : 'District-wise market share';
+  v.innerHTML = `${focusStrip(g, m, c)}
+  <div class="panel"><h2>${title}</h2><p class="sub">${prodLabel(c.group)}, ${pt.cur} vs ${pt.prev}${level === 'district' && S.sa !== 'ALL' ? `, districts of ${esc(S.sa)}` : ''}. Click a column to sort, click a row to drill down (filters update, you stay on this tab).</p><div id="tEnt"></div></div>
+  <div class="grid g2 mt">
+    <div class="panel"><h2>HPCL share change by ${level === 'sa' ? 'Sales Area' : 'district'}</h2><p class="sub">Percentage points vs previous year</p><div class="chart tall"><canvas id="cChg"></canvas></div></div>
+    <div class="panel"><h2>HPCL vs market growth</h2><p class="sub">Bubble = market size; dividers at RO averages; diagonal = parity.</p><div class="chart tall"><canvas id="cSc"></canvas></div></div>
+  </div>
+  <div class="panel mt"><h2>Market share heatmap</h2><p class="sub">Green = gain / outperformance, red = loss / underperformance; blue intensity = size.</p><div id="tHeat"></div></div>`;
+  const saF = level === 'district' ? (S.sa || 'ALL') : 'ALL'; mountStd('tEnt', stdEntityRows(level, c, saF).rows, { unit: u, regionLabel: level === 'sa' ? 'SALES AREA' : 'DISTRICT', curLbl: pt.cur, prevLbl: pt.prev, onRow: drillEntity, isSel: isSelEntity, sort: { key: 'mktCur', dir: -1 }, foot: level === 'sa' ? stdFootRows(c, 'ALL') : stdFootRows(c, saF) });
+  const heatCols = [{ key: 'name', label: level === 'sa' ? 'Sales Area' : 'District', l: 1 }, { key: 'mktCur', label: `Market (${u})`, fmt: v => fmtVol(v), heat: 'seq' }, { key: 'hpCur', label: `HPCL (${u})`, fmt: v => fmtVol(v), heat: 'seq' },
+    { key: 'share', label: 'HPCL share', fmt: v => fmtPct(v), heat: 'seq' }, { key: 'shareChg', label: 'Share change', fmt: v => fmtPP(v), heat: 'div' }, { key: 'hpGrowth', label: 'HPCL growth', fmt: v => fmtG(v), heat: 'div' },
+    { key: 'mktGrowth', label: 'Market growth', fmt: v => fmtG(v), heat: 'div' }, { key: 'hpVsMkt', label: 'HPCL vs market', fmt: v => fmtPP(v), heat: 'div' },
+    { key: 'tags', label: 'Signals', l: 1, fmt: v => (v || []).map(t => `<span class="tag ${tagCls[t]}">${t}</span>`).join('') }];
+  mountTable('tHeat', heatCols, er.rows, { onRow: drillEntity, isSel: isSelEntity, sort: { key: 'shareChg', dir: -1 } });
+  const srt = er.rows.filter(r => r.shareChg != null).sort((a, b) => b.shareChg - a.shareChg);
+  mkChart('cChg', { type: 'bar', data: { labels: srt.map(r => r.name.replace(/^CT-/, '')), datasets: [{ label: 'Share change (pp)', data: srt.map(r => r.shareChg), backgroundColor: srt.map(r => r.shareChg >= 0 ? '#1C7A4A' : '#C42B22') }] },
+    options: { indexAxis: 'y', onClick: (e, els) => { if (els.length) drillEntity(srt[els[0].index]); }, scales: { x: { title: { display: true, text: 'pp' } } }, plugins: { legend: { display: false },
+      tooltip: { callbacks: { title: it => tipTitle('HPCL', c.group, srt[it[0].dataIndex].name), label: it => { const r = srt[it.dataIndex]; return tipLines({ period: pt.cur, vol: r.hpCur, unit: u, share: r.share, prev: r.hpPrev, growth: r.hpGrowth, shareChg: r.shareChg }); } } } } } });
+  chartGrowthScatter('cSc', er, c, level);
+}
+const renderDistrict = (v, c, g, m) => renderEntityTab(v, c, g, m, 'district');
+const renderSA = (v, c, g, m) => renderEntityTab(v, c, g, m, 'sa');
+
+/* ---------- TAB 5: PRODUCT ---------- */
+function renderProduct(v, c, g, m) {
+  const pt = periodText(c), rows = productRows(g, c, S.prodUnit);
+  v.innerHTML = `${focusStrip(g, m, c)}
+  <div class="panel"><div class="ph"><div><h2>Product performance summary</h2><p class="sub">${esc(g.label)}, ${pt.cur} vs ${pt.prev}. TMF KL = MS MT × 1.411 + HSD MT × 1.210; CNG+CBG KG = MT × 1,000. Click a product to select it.</p></div>
+    <div class="seg" id="pu"><button data-v="NATIVE" aria-pressed="${S.prodUnit === 'NATIVE'}">KL / KG</button><button data-v="MT" aria-pressed="${S.prodUnit === 'MT'}">MT</button></div></div><div id="tP"></div></div>
+  <div class="grid g2 mt">
+    <div class="panel"><h2>HPCL share by product</h2><p class="sub">Current vs previous year</p><div class="chart"><canvas id="cPS"></canvas></div></div>
+    <div class="panel"><div class="ph"><div><h2>HPCL share trend by product</h2><p class="sub">${S.trendMode === 'C' ? 'Cumulative from April' : 'Monthly'}</p></div>${trendToggle('p')}</div><div class="chart"><canvas id="cPT"></canvas></div></div>
+  </div>
+`;
+  $('pu').onclick = e => { const b = e.target.closest('button'); if (!b) return; S.prodUnit = b.dataset.v; render(); };
+  mountStd('tP', stdProductRows(g, c, S.prodUnit), { regionLabel: 'PRODUCT', curLbl: pt.cur, prevLbl: pt.prev, onRow: r => { S.group = r.key; syncFilters(); render(); }, isSel: r => r.key === S.group });
+  mkChart('cPS', { type: 'bar', data: { labels: rows.map(r => r.product), datasets: [{ label: pt.cur, data: rows.map(r => r.share), backgroundColor: '#003B7A' }, { label: pt.prev, data: rows.map(r => r.prevShare), backgroundColor: '#9DB4D3' }] },
+    options: { scales: { y: { ticks: { callback: v => v + '%' }, title: { display: true, text: 'HPCL share %' } } }, plugins: { tooltip: { callbacks: { title: it => tipTitle('HPCL', rows[it[0].dataIndex].key, g.label), label: it => { const r = rows[it.dataIndex]; return it.datasetIndex ? [`Period: ${pt.prev}`, `PY volume: ${fmtVol(r.hpPrev, r.unit)}`, `PY share: ${fmtPct(r.prevShare)}`] : tipLines({ period: pt.cur, vol: r.hpCur, unit: r.unit, share: r.share, prev: r.hpPrev, growth: r.hpGrowth, shareChg: r.shareChg }); } } } } } });
+  const pcol = { MS: '#003B7A', HSD: '#E87722', TMF: '#16212E', GAS: '#2A9D8F' };
+  const sers = rows.map(r => ({ r, s: EN.series(g.dists, { ...c, group: r.key, unit: r.unit }, S.trendMode) }));
+  mkChart('cPT', { type: 'line', data: { labels: MN.map((_, i) => mLabel(c.fy, i)), datasets: sers.map(({ r, s }) => ({ label: r.product, data: s.map(x => x.m ? x.m.hp.share : null), borderColor: pcol[r.key], backgroundColor: pcol[r.key], borderWidth: r.key === 'TMF' ? 3 : 1.8, pointRadius: 2.5 })) },
+    options: { interaction: { mode: 'nearest', intersect: false }, scales: { y: { ticks: { callback: v => v + '%' } } }, plugins: { tooltip: { callbacks: { title: it => tipTitle('HPCL', sers[it[0].datasetIndex].r.key, g.label), label: it => { const { r, s } = sers[it.datasetIndex]; const x = s[it.dataIndex].m.hp; return tipLines({ period: (S.trendMode === 'C' ? 'Cum. ' : '') + periodLabel(c.fy, s[it.dataIndex].months), vol: x.cur, unit: r.unit, share: x.share, prev: x.prev, growth: x.growth, shareChg: x.shareChg }); } } } } } });
+  wireTrendToggles();
+}
+
+/* ---------- TAB 6: TREND ---------- */
+function monthlyPerfRows(dists, c, mode) {
+  const ser = EN.series(dists, c, mode);
+  return ser.filter(s => s.hasCur).map(s => ({ month: mode === 'C' ? `${MN[0]}–${MN[s.i]} (${mLabel(c.fy, s.i)})` : mLabel(c.fy, s.i), i: s.i, hpCur: s.m.hp.cur, mktCur: s.m.totCur, hpPrev: s.m.hp.prev, mktPrev: s.m.totPrev, hpGrowth: s.m.hp.growth, mktGrowth: s.m.mktGrowth, share: s.m.hp.share, prevShare: s.m.hp.prevShare, shareChg: s.m.hp.shareChg }));
+}
+function renderTrend(v, c, g, m) {
+  const vg = S.vtGroup || S.group; const units = CONFIG.groups[vg].units; const vu = S.vtUnit && units.includes(S.vtUnit) ? S.vtUnit : (units.includes(S.unit) ? S.unit : units[0]);
+  const omcs = EN.omcsInView(c.view); const vo = S.vtOmc === 'ALL' || omcs.includes(S.vtOmc) ? S.vtOmc : 'ALL';
+  const gs = Object.keys(CONFIG.groups).filter(k => k !== 'ALL' && CONFIG.groups[k].prods.some(p => DS.products.includes(p)));
+  const mode = S.trendMode, cumLbl = mode === 'C' ? 'cumulative ' : '';
+  v.innerHTML = `${focusStrip(g, m, c)}
+  <div class="panel"><div class="ph"><div><h2>Volume trend</h2><p class="sub">${esc(g.label)}, current FY vs previous FY, ${mode === 'C' ? 'cumulative from April' : 'monthly'}. Months without actual data are left blank.</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+      <div class="f"><label for="vtG">Product</label><select id="vtG">${gs.map(k => opt(k, prodLabel(k), k === vg)).join('')}</select></div>
+      <div class="f"><label for="vtU">Unit</label><select id="vtU">${units.map(u => opt(u, u, u === vu)).join('')}</select></div>
+      <div class="f"><label for="vtO">OMC</label><select id="vtO">${omcs.map(o => opt(o, o, o === vo)).join('')}${opt('ALL', S.view === 'PSU' ? 'All PSU (market)' : 'All OMCs (market)', vo === 'ALL')}</select></div>
+      ${trendToggle('t')}</div></div>
+    <div class="chart tall"><canvas id="cVol"></canvas></div></div>
+  <div class="panel mt"><h2>Monthly performance — ${mode === 'C' ? 'cumulative' : 'monthly'}</h2><p class="sub">${prodLabel(c.group)} in ${c.unit}. Growth compares the same ${mode === 'C' ? 'cumulative period' : 'month'} of the previous FY. Use the Monthly / Cumulative switch above.</p><div id="tMP"></div></div>`;
+  $('vtG').onchange = e => { S.vtGroup = e.target.value; S.vtUnit = null; render(); };
+  $('vtU').onchange = e => { S.vtUnit = e.target.value; render(); };
+  $('vtO').onchange = e => { S.vtOmc = e.target.value; render(); };
+  const vc = { ...c, group: vg, unit: vu };
+  const ser = EN.series(g.dists, vc, mode);
+  const pick = (s, which) => { const x = s.mAll; if (vo === 'ALL') return which === 'cur' ? x.totCur : x.totPrev; const r = x.rows.find(y => y.omc === vo) || {}; return which === 'cur' ? r.cur : r.prev; };
+  const py = EN.prevFY(c.fy);
+  mkChart('cVol', { type: 'bar', data: { labels: MN.map((_, i) => mLabel(c.fy, i)), datasets: [
+    { label: `${vo === 'ALL' ? 'Market' : vo} ${c.fy}`, data: ser.map(s => s.hasCur ? pick(s, 'cur') : null), backgroundColor: vo === 'ALL' ? '#16212E' : omcColor(vo, 0) },
+    ...(py ? [{ label: `${vo === 'ALL' ? 'Market' : vo} ${py.label}`, data: ser.map(s => s.hasPrev ? pick(s, 'prev') : null), backgroundColor: '#B8C6D8' }] : [])] },
+    options: { scales: { y: { title: { display: true, text: vu }, ticks: { callback: v => nf0.format(v) } } }, plugins: { tooltip: { callbacks: {
+      title: it => tipTitle(vo === 'ALL' ? 'Market' : vo, vg, g.label),
+      label: it => { const s = ser[it.dataIndex]; const x = s.mAll; const r = vo === 'ALL' ? { cur: x.totCur, prev: x.totPrev, share: 100, growth: x.mktGrowth, shareChg: null } : (x.rows.find(y => y.omc === vo) || {});
+        if (it.datasetIndex === 1) return [`Period: ${py ? periodLabel(py.label, s.months) : ''}`, `PY volume: ${fmtVol(r.prev, vu)}`];
+        return tipLines({ period: cumLbl + periodLabel(c.fy, s.months), vol: r.cur, unit: vu, share: r.share, prev: r.prev, growth: s.hasPrev ? r.growth : null, shareChg: r.shareChg }); } } } } } });
+  { const ptt = periodText(c); mountStd('tMP', stdMonthRows(g.dists, c, mode), { unit: c.unit, regionLabel: mode === 'C' ? 'PERIOD (CUM.)' : 'MONTH', curLbl: mode === 'C' ? 'cumulative from April, ' + c.fy : 'month of ' + c.fy, prevLbl: 'same period of ' + (EN.prevFY(c.fy) ? EN.prevFY(c.fy).label : 'previous FY'), sort: { key: 'i', dir: 1 } }); }
+  wireTrendToggles();
+}
+
+/* ---------- TAB 7: OPPORTUNITY ---------- */
+function renderOpp(v, c, g, m) {
+  const lvl = S.atkLevel;
+  const saF = g.kind !== 'ro' && lvl === 'district' ? g.sa : 'ALL';
+  const er = EN.entityRows(lvl, c, saF);
+  const glL = S.glLevel || breakdownLevel(); const erGL = EN.entityRows(glL, c, glL === 'district' && g.kind !== 'ro' ? g.sa : 'ALL');
+  const u = c.unit;
+  const defs = [['Attack Opportunity', 'Large market (≥ median) with HPCL share below RO average'], ['Share Loss', 'HPCL share lower than previous year'], ['Growth Gap', 'Market growing faster than HPCL'], ['Leadership', 'HPCL share ≥ RO average and rising'], ['Defensive Market', 'HPCL share ≥ RO average but market declining']];
+  const cards = defs.map(([t, d]) => { const list = er.rows.filter(r => r.tags.includes(t)); return `<div class="oc"><h3><span class="tag ${tagCls[t]}">${t}</span></h3><div class="n">${list.length}</div><p>${d}</p><ul>${list.slice(0, 6).map(r => `<li>${esc(r.name)}</li>`).join('')}${list.length > 6 ? `<li>+${list.length - 6} more</li>` : ''}</ul></div>`; }).join('');
+  const gl = gainLose(erGL, 1000);
+  v.innerHTML = `${focusStrip(g, m, c)}
+  <div class="panel"><div class="ph"><div><h2>HPCL market share opportunities</h2><p class="sub">${prodLabel(c.group)}, ${periodText(c).cur}. RO HPCL share = ${fmtPct(er.roShare)}; median market size = ${fmtVol(er.median, u)}.</p></div>${levelToggle('atkLevel', lvl)}</div><div class="ocards">${cards}</div></div>
+  <div class="panel mt"><h2>Top 10 HPCL market share attack opportunities</h2><p class="sub"><b>Indicative opportunity volume</b> = market volume × (RO HPCL share − ${lvl === 'sa' ? 'Sales Area' : 'district'} HPCL share), only where share is below RO. It is an indicator of headroom, not guaranteed incremental volume.</p><div id="tA"></div></div>
+  <div class="grid g2 mt">
+    <div class="panel"><div class="ph"><h2>Biggest share gainers</h2>${levelToggle('glLevel', glL)}</div><div id="tG"></div></div>
+    <div class="panel"><h2>Biggest share losers</h2><div id="tL"></div></div>
+  </div>
+  <div class="grid g2 mt">
+    <div class="panel"><h2>HPCL vs market growth quadrants</h2><p class="sub">Bottom-right = market growing faster than HPCL (priority). Click to drill down.</p><div class="chart tall"><canvas id="cQ"></canvas></div></div>
+    <div class="panel"><h2>All markets classified</h2><div id="tC"></div></div>
+  </div>`;
+  mountTable('tA', atkCols(lvl, u, false), attackRows(er, 10), { onRow: drillEntity, isSel: isSelEntity });
+  mountTable('tG', glCols(glL), gl.gain, { onRow: drillEntity, isSel: isSelEntity });
+  mountTable('tL', glCols(glL), gl.lose, { onRow: drillEntity, isSel: isSelEntity });
+  chartGrowthScatter('cQ', er, c, lvl);
+  mountTable('tC', [{ key: 'name', label: lvl === 'sa' ? 'Sales Area' : 'District', l: 1 }, { key: 'mktCur', label: `Market (${u})`, fmt: v => fmtVol(v) }, { key: 'share', label: 'HPCL share', fmt: v => fmtPct(v) }, { key: 'shareChg', label: 'Change', fmt: v => fmtPP(v), cls: cls }, { key: 'tags', label: 'Signals', l: 1, fmt: v => (v || []).map(t => `<span class="tag ${tagCls[t]}">${t}</span>`).join('') || '—' }], er.rows, { onRow: drillEntity, isSel: isSelEntity, sort: { key: 'mktCur', dir: -1 } });
+  wireLevelToggles();
+}
+
+/* ---------- TAB 8: DATA VALIDATION ---------- */
+const sumRaw = (rows, months) => rows.reduce((a, r) => a + months.reduce((b, m) => b + r.vals[m], 0), 0);
+const approxEq = (a, b) => a != null && b != null && Math.abs(a - b) <= 1e-6 * Math.max(1, Math.abs(a), Math.abs(b));
+function runTests() {
+  const cur = EN.fy(S.fy), py = EN.prevFY(S.fy);
+  const ro = EN.roDistricts();
+  if (!S.vDist || !DS.districtInfo[S.vDist]) S.vDist = (DS.districts.find(d => d.mapped && EN.rawRows(cur.label, CONFIG.focusOMC, 'MS', d.key).length) || DS.districts[0] || {}).key;
+  if (S.vMonth == null || S.vMonth > cur.latestMonth) S.vMonth = Math.max(cur.latestMonth, 0);
+  const d = S.vDist, mo = S.vMonth, dn = (DS.districtInfo[d] || {}).name, H = CONFIG.focusOMC;
+  const cum = range(0, mo); const allO = DS.omcs;
+  const T = [];
+  const add = (name, inputs, method, indep, eng, fmt = v => fmtVol(v)) => T.push({ name, inputs, method, indep, eng, pass: approxEq(indep, eng), fmt });
+  const base = { fy: cur.label, view: 'ALL' };
+  // 1-3
+  const r1 = sumRaw(EN.rawRows(cur.label, H, 'MS', d), [mo]);
+  const m1 = EN.metrics([d], { ...base, months: [mo], group: 'MS', unit: 'MT' });
+  add('HPCL MS volume (MT)', `${dn}, ${mLabel(cur.label, mo)}`, 'Sum of all raw HPCL rows whose product maps to MS for that district and month', r1, m1.hp.cur);
+  const r2 = sumRaw(EN.rawRows(cur.label, null, 'MS', d), [mo]);
+  add('Total MS market (MT)', `${dn}, ${mLabel(cur.label, mo)}, all OMCs`, 'Sum of every OMC\'s MS rows for the district and month', r2, m1.totCur);
+  add('HPCL MS market share', `${dn}, ${mLabel(cur.label, mo)}`, 'Test 1 ÷ Test 2 × 100', sharePct(r1, r2), m1.hp.share, v => fmtPct(v, 4));
+  // 4-6
+  const m4 = EN.metrics([d], { ...base, months: cum, group: 'MS', unit: 'MT' });
+  const r4 = sumRaw(EN.rawRows(cur.label, H, 'MS', d), cum);
+  add('HPCL MS cumulative (MT)', `${dn}, Apr–${MN[mo]} ${cur.label}`, 'Sum of raw HPCL MS rows across Apr..selected month', r4, m4.hp.cur);
+  if (py && mo <= py.latestMonth) {
+    const r5 = sumRaw(EN.rawRows(py.label, H, 'MS', d), cum);
+    add('HPCL MS same period PY (MT)', `${dn}, Apr–${MN[mo]} ${py.label}`, 'Same months of the previous FY (not the full previous year)', r5, m4.hp.prev);
+    const mk4 = sumRaw(EN.rawRows(cur.label, null, 'MS', d), cum), mk5 = sumRaw(EN.rawRows(py.label, null, 'MS', d), cum);
+    add('HPCL MS share change (pp)', `${dn}, Apr–${MN[mo]}`, '(HPCL cum ÷ market cum) − (HPCL PY cum ÷ market PY cum), × 100', sharePct(r4, mk4) - sharePct(r5, mk5), m4.hp.shareChg, v => fmtPP(v, 4));
+  } else T.push({ name: 'HPCL MS same period PY / share change', inputs: 'Previous FY', method: 'Previous FY sheet missing or shorter than selected period', indep: null, eng: null, pass: null, fmt: fmtVol });
+  // 7-8 TMF
+  const ms = sumRaw(EN.rawRows(cur.label, H, 'MS', d), [mo]), hsd = sumRaw(EN.rawRows(cur.label, H, 'HSD', d), [mo]);
+  add('TMF MT', `HPCL, ${dn}, ${mLabel(cur.label, mo)}`, `MS MT (${fmtVol(ms)}) + HSD MT (${fmtVol(hsd)})`, ms + hsd, EN.metrics([d], { ...base, months: [mo], group: 'TMF', unit: 'MT' }).hp.cur);
+  add('TMF KL', `HPCL, ${dn}, ${mLabel(cur.label, mo)}`, `MS MT × 1.411 + HSD MT × 1.210 (no single TMF factor)`, ms * 1.411 + hsd * 1.210, EN.metrics([d], { ...base, months: [mo], group: 'TMF', unit: 'KL' }).hp.cur);
+  // 9-11 gas at RO level (all OMCs)
+  const cng = ro.reduce((a, k) => a + sumRaw(EN.rawRows(cur.label, null, 'CNG', k), [mo]), 0), cbg = ro.reduce((a, k) => a + sumRaw(EN.rawRows(cur.label, null, 'CBG', k), [mo]), 0);
+  add('CNG KG', `Complete RO, all OMCs, ${mLabel(cur.label, mo)}`, `CNG MT (${fmtVol(cng)}) × 1,000`, cng * 1000, EN.vol(cur.label, ro, allO, ['CNG'], [mo], 'KG'));
+  add('CBG KG', `Complete RO, all OMCs, ${mLabel(cur.label, mo)}`, `CBG MT (${fmtVol(cbg)}) × 1,000`, cbg * 1000, EN.vol(cur.label, ro, allO, ['CBG'], [mo], 'KG'));
+  add('CNG+CBG KG', `Complete RO, all OMCs, ${mLabel(cur.label, mo)}`, '(CNG MT + CBG MT) × 1,000', (cng + cbg) * 1000, EN.metrics(ro, { ...base, months: [mo], group: 'GAS', unit: 'KG' }).totCur);
+  // 12 SA aggregation
+  const sa = (DS.districtInfo[d] || {}).sa; const saD = EN.saDistricts(sa);
+  const r12 = saD.reduce((a, k) => a + sumRaw(EN.rawRows(cur.label, H, 'MS', k), cum) + sumRaw(EN.rawRows(cur.label, H, 'HSD', k), cum), 0);
+  add('Sales Area aggregation', `HPCL TMF MT, ${sa} (${saD.length} districts), Apr–${MN[mo]}`, 'Sum of raw rows of every district mapped to the Sales Area', r12, EN.metrics(saD, { ...base, months: cum, group: 'TMF', unit: 'MT' }).hp.cur);
+  // 13 RO aggregation
+  const r13 = EN.saList().reduce((a, s) => a + EN.metrics(EN.saDistricts(s), { ...base, months: cum, group: 'TMF', unit: 'MT' }).totCur, 0);
+  const raw13 = ro.reduce((a, k) => a + sumRaw(EN.rawRows(cur.label, null, 'MS', k), cum) + sumRaw(EN.rawRows(cur.label, null, 'HSD', k), cum), 0);
+  add('Complete RO aggregation', `TMF market MT, ${ro.length} districts, Apr–${MN[mo]}`, `Raw total of all mapped districts; check: sum of Sales Area totals = ${fmtVol(r13)}`, raw13, EN.metrics(ro, { ...base, months: cum, group: 'TMF', unit: 'MT' }).totCur);
+  // 14 duplicates
+  const groups = {}; EN.ds.raw.filter(r => r.fy === cur.label && (EN.cat === 'ALL' || r.cat === EN.cat)).forEach(r => { const k = [r.omc, r.prod, r.dist].join('|'); (groups[k] ||= []).push(r); });
+  const dupKeys = Object.keys(groups).filter(k => groups[k].length > 1);
+  let dup = null;
+  if (dupKeys.length) {
+    const k = dupKeys.find(k => k.startsWith(H + '|') && k.endsWith('|' + d)) || dupKeys.find(k => k.startsWith(H + '|')) || dupKeys[0];
+    const rows = groups[k]; const [o, p, dk] = k.split('|');
+    dup = { o, p, dk, rows, mo };
+    add('Duplicate product-code aggregation', `${o} ${p}, ${DS.districtInfo[dk].name}, ${mLabel(cur.label, mo)}: ${rows.length} rows`, `All rows summed (first row alone would give ${fmtVol(rows[0].vals[mo])})`, sumRaw(rows, [mo]), EN.vol(cur.label, [dk], [o], [p], [mo], 'MT'));
+  } else T.push({ name: 'Duplicate product-code aggregation', inputs: '—', method: 'No OMC + product + district combination has more than one row in this FY', indep: null, eng: null, pass: null, fmt: fmtVol });
+  return { T, dup, dupCount: dupKeys.length };
+}
+function renderValid(v, c, g, m) {
+  const cur = EN.fy(S.fy), py = EN.prevFY(S.fy);
+  const res = runTests();
+  const box = (l, val) => `<div class="vbox"><div class="l">${l}</div><div class="v">${val}</div></div>`;
+  // live warnings for current selection
+  const live = [];
+  if (!py) live.push(`No previous FY sheet for ${S.fy}: growth and share change unavailable.`);
+  else if (!m.pyOK) live.push(`Previous FY (${py.label}) does not cover the selected months.`);
+  if (m.totCur === 0) live.push('Zero market volume for the current selection: share denominators are zero, shares shown as N/A.');
+  if (m.pyOK && m.totPrev === 0) live.push('Zero previous-year market volume for the current selection: growth shown as N/A.');
+  if (m.pyOK && m.hp.prev === 0) live.push('HPCL had zero volume in the previous-year period for this selection: HPCL growth shown as N/A.');
+  CONFIG.groups[S.group].prods.filter(p => !DS.products.includes(p)).forEach(p => live.push(`Product ${p} is not in the workbook; ${prodLabel(S.group)} excludes it.`));
+  g.dists.filter(k => !EN.fy(S.fy) || !EN.cube[S.fy] || !EN.cube[S.fy][k]).forEach(k => live.push(`District ${DS.districtInfo[k].name} has no rows in ${S.fy}.`));
+  const all = [...DS.warnings.map(t => ({ t, k: '' })), ...live.map(t => ({ t, k: '' })), ...DS.info.map(t => ({ t, k: 'info' }))];
+  const npass = res.T.filter(t => t.pass === true).length, nfail = res.T.filter(t => t.pass === false).length;
+  v.innerHTML = `<div class="panel"><h2>Dataset summary</h2><p class="sub">Source: ${esc(FILE)}. ${DS.sheetsIgnored.length ? 'Non-FY sheets ignored: ' + DS.sheetsIgnored.map(esc).join(', ') + '.' : ''}</p>
+    <div class="vgrid">${box('Current FY', S.fy)}${box('Previous FY', py ? py.label : 'N/A')}${box('Latest month with data', cur.latestMonth >= 0 ? mLabel(S.fy, cur.latestMonth) : 'None')}
+    ${box('Districts', DS.districts.length + (DS.districts.some(d => !d.mapped) ? ` (${DS.districts.filter(d => !d.mapped).length} unmapped)` : ''))}${box('Sales Areas', EN.saList().length)}${box('OMCs', `${DS.omcs.length}: ${DS.omcs.join(', ')}`)}
+    ${box('Products', `${DS.products.length}: ${DS.products.join(', ')}`)}${box(`${S.fy} records`, nf0.format(cur.records))}${box(`${py ? py.label : 'Previous FY'} records`, py ? nf0.format(py.records) : 'N/A')}
+    ${DS.fys.map(f => box(`${f.label} months with data`, f.actualMonths.length ? `${MN[0]}–${MN[f.latestMonth]} (${f.actualMonths.length})` : 'none')).join('')}</div>
+    <label class="note" style="display:block;margin-top:10px"><input type="checkbox" id="incUn" ${EN.includeUnmapped ? 'checked' : ''}> Include unmapped districts (Sales Area "Unmapped") in Complete RO</label></div>
+  <div class="panel mt"><h2>Product code mapping</h2><p class="sub">Every distinct PRODCODE / PRODNAME found in the workbook and the product it was assigned to. Check this whenever a new file is uploaded; unrecognised rows are excluded from all calculations.</p>
+    <div class="tw"><table class="t"><thead><tr><th class="l">FY</th><th class="l">PRODCODE</th><th class="l">PRODNAME (as in Excel)</th><th class="l">Mapped to</th><th>Rows</th><th>Districts</th><th>Total MT (all months)</th></tr></thead><tbody>
+    ${DS.productInventory.map(p => `<tr><td class="l">${esc(p.fy)}</td><td class="l">${esc(p.code)}</td><td class="l mono">"${esc(p.name)}"</td><td class="l ${p.mapped ? '' : 'fail'}">${p.mapped || 'NOT RECOGNISED — excluded'}</td><td>${p.rows}</td><td>${p.dists}</td><td>${nf2.format(p.mt)}</td></tr>`).join('')}</tbody></table></div></div>
+  <div class="panel mt"><h2>Warnings and notes</h2><ul class="warnlist">${all.length ? all.map(w => `<li class="${w.k}">${esc(w.t)}</li>`).join('') : '<li class="ok">No data-quality warnings. All 17 mapped districts, products and both FYs were found.</li>'}</ul></div>
+  <div class="panel mt"><div class="ph"><div><h2>Calculation verification</h2><p class="sub">Each "independent" value is recomputed directly from the raw Excel rows (bypassing the dashboard cube) and compared with the engine value. ${npass} passed, ${nfail} failed.</p></div>
+    <div style="display:flex;gap:8px;align-items:flex-end"><div class="f"><label for="vD">Test district</label><select id="vD">${DS.districts.map(d => opt(d.key, d.name, d.key === S.vDist)).join('')}</select></div>
+    <div class="f"><label for="vM">Test month</label><select id="vM">${cur.actualMonths.map(i => opt(i, mLabel(S.fy, i), i === S.vMonth)).join('')}</select></div></div></div>
+    <div class="tw"><table class="t"><thead><tr><th class="l">#</th><th class="l">Test</th><th class="l">Inputs</th><th class="l">Method</th><th>Independent (raw Excel)</th><th>Dashboard engine</th><th>Status</th></tr></thead><tbody>
+    ${res.T.map((t, i) => `<tr><td class="l">${i + 1}</td><td class="l"><b>${t.name}</b></td><td class="l method">${esc(t.inputs)}</td><td class="l method">${esc(t.method)}</td><td>${t.indep == null ? '—' : t.fmt(t.indep)}<div class="note mono">${t.indep == null ? '' : t.indep.toFixed(6)}</div></td><td>${t.eng == null ? '—' : t.fmt(t.eng)}<div class="note mono">${t.eng == null ? '' : t.eng.toFixed(6)}</div></td><td class="${t.pass === true ? 'pass' : t.pass === false ? 'fail' : 'na'}">${t.pass === true ? 'PASS' : t.pass === false ? 'FAIL' : 'N/A'}</td></tr>`).join('')}
+    </tbody></table></div>
+    ${res.dup ? `<h2 class="mt">Duplicate rows used in test ${res.T.findIndex(t => t.name.startsWith('Duplicate')) + 1}</h2><p class="sub">${res.dupCount} OMC + product + district combinations in ${S.fy} have more than one row (multiple product codes); all are summed.</p>
+    <div class="tw"><table class="t"><thead><tr><th class="l">Sheet row</th><th class="l">COMNAME</th><th class="l">PRODCODE</th><th class="l">PRODNAME</th><th class="l">DISTNAME</th><th>${MN[res.dup.mo]} (MT)</th></tr></thead><tbody>${res.dup.rows.map(r => `<tr><td class="l">${r.sheetRow}</td><td class="l">${esc(r.omcRaw)}</td><td class="l">${esc(r.prodCode)}</td><td class="l">${esc(r.prodRaw)}</td><td class="l">${esc(r.distRaw)}</td><td>${r.vals[res.dup.mo].toFixed(3)}</td></tr>`).join('')}</tbody><tfoot><tr><td class="l" colspan="5">Sum</td><td>${sumRaw(res.dup.rows, [res.dup.mo]).toFixed(3)}</td></tr></tfoot></table></div>` : ''}
+  </div>
+  <div class="panel mt"><h2>Raw row lookup</h2><p class="sub">Find the exact Excel rows behind any figure (sheet row numbers match Excel).</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <div class="f"><label for="lkF">FY</label><select id="lkF">${DS.fys.map(f => opt(f.label, f.label, f.label === (S.lk.fy || S.fy))).join('')}</select></div>
+      <div class="f"><label for="lkO">OMC</label><select id="lkO">${opt('', 'All OMCs', !S.lk.omc)}${DS.omcs.map(o => opt(o, o, o === S.lk.omc)).join('')}</select></div>
+      <div class="f"><label for="lkP">Product</label><select id="lkP">${DS.products.map(p => opt(p, p, p === S.lk.prod)).join('')}</select></div>
+      <div class="f"><label for="lkD">District</label><select id="lkD">${DS.districts.map(d => opt(d.key, d.name, d.key === (S.lk.dist || S.vDist))).join('')}</select></div></div>
+    <div id="lkOut"></div></div>
+  <div class="panel mt"><h2>Methodology and formulas</h2><ul class="ins">
+    <li>Source figures are MT. Raw rows are normalised to FY × month × OMC × product × district × Sales Area, then summed into an indexed cube (duplicate product codes are added, never first-match).</li>
+    <li>Unit conversion per product before summing: MS KL = MT × 1.411; HSD KL = MT × 1.210; CNG KG = MT × 1,000; CBG KG = MT × 1,000. TMF KL = MS MT × 1.411 + HSD MT × 1.210. CNG+CBG is never converted to KL.</li>
+    <li>Market share = OMC volume ÷ total market volume × 100 (denominator: all OMCs in All-market view, HPCL+IOCL+BPCL in PSU view). Shares use the selected unit, so TMF share in KL weights MS and HSD by their own factors.</li>
+    <li>Cumulative share = cumulative OMC volume ÷ cumulative market volume (monthly shares are never averaged). Comparison period = the same months of the previous FY.</li>
+    <li>Volume growth % = (current − previous) ÷ previous × 100, N/A when previous = 0. Share change = current share − previous share, in percentage points (pp). HPCL vs market = HPCL growth % − market growth %.</li>
+    <li>Latest month = the last month containing any non-zero value in that FY sheet; later months are treated as not yet available, not as zero sales. Rows labelled Total / Sub Total are excluded.</li>
+    <li>Indicative opportunity = market volume × (RO HPCL share − local HPCL share), only where local share is below the RO share. Attack Opportunity = market at or above the median market size and share below RO average.</li></ul></div>`;
+  $('vD').onchange = e => { S.vDist = e.target.value; render(); };
+  $('vM').onchange = e => { S.vMonth = +e.target.value; render(); };
+  $('incUn').onchange = e => { EN.setIncludeUnmapped(e.target.checked); syncFilters(); render(); };
+  const lk = () => {
+    S.lk = { fy: $('lkF').value, omc: $('lkO').value || null, prod: $('lkP').value, dist: $('lkD').value };
+    const f = EN.fy(S.lk.fy);
+    const rows = EN.rawRows(S.lk.fy, S.lk.omc, S.lk.prod, S.lk.dist);
+    $('lkOut').innerHTML = `<div class="tw"><table class="t"><thead><tr><th class="l">Row</th><th class="l">COMNAME</th><th class="l">PRODCODE</th><th class="l">PRODNAME</th><th class="l">Category</th>${MN.map((mm, i) => `<th>${mm}${i > f.latestMonth ? '*' : ''}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr><td class="l">${r.sheetRow}</td><td class="l">${esc(r.omcRaw)}</td><td class="l">${esc(r.prodCode)}</td><td class="l">${esc(r.prodRaw)}</td><td class="l">${esc(r.cat)}</td>${r.vals.map(x => `<td>${x.toFixed(3)}</td>`).join('')}</tr>`).join('') || '<tr><td class="l" colspan="17">No rows</td></tr>'}</tbody>
+      <tfoot><tr><td class="l" colspan="5">Sum (MT)</td>${MN.map((_, i) => `<td>${sumRaw(rows, [i]).toFixed(3)}</td>`).join('')}</tr></tfoot></table></div><p class="note">* month after the latest month with data in ${S.lk.fy}.</p>`;
+  };
+  ['lkF', 'lkO', 'lkP', 'lkD'].forEach(id => $(id).onchange = lk); lk();
+}
+
+/* =====================================================================
+   EXPORT: EXCEL
+   ===================================================================== */
+function sheetFromRows(header, rows, fmts, widths) {
+  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+  rows.forEach((r, ri) => r.forEach((v, ci) => { const f = fmts && fmts[ci]; if (f && typeof v === 'number') { const a = XLSX.utils.encode_cell({ r: ri + 1, c: ci }); if (ws[a]) ws[a].z = f; } }));
+  ws['!cols'] = header.map((h, i) => ({ wch: (widths && widths[i]) || Math.max(12, String(h).length + 2) }));
+  return ws;
+}
+const nz = v => v == null || !isFinite(v) ? null : v;
+function appliedFilters(c, g) {
+  const pt = periodText(c);
+  return [['Dashboard', `${APP_TITLE} (v${APP_VERSION})`], ['Source file', `${FILE} (${SOURCE_MODE})`], ['Generated', new Date().toLocaleString('en-IN')],
+    ['Financial year', S.fy], ['Comparison FY', EN.prevFY(S.fy) ? EN.prevFY(S.fy).label : 'N/A'], ['Analysis level', { DIST: 'District', SA: 'Sales Area', RO: 'Complete RO' }[S.level]], ['Geography', g.label],
+    ['Sales Area filter', S.sa === 'ALL' ? 'All' : S.sa], ['Product', prodLabel(S.group)], ['Unit', S.unit], ['Period type', S.period === 'M' ? 'Monthly' : 'Cumulative'],
+    ['Current period', pt.cur], ['Previous period', pt.prev], ['Market view', viewLabel()], ['Category', S.cat === 'ALL' ? 'All' : S.cat]];
+}
+function exportExcel() {
+  const c = ctx(), g = geo(), m = EN.metrics(g.dists, c), u = c.unit, P = '0.00', V = '#,##0.00';
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, sheetFromRows(['Filter', 'Value'], appliedFilters(c, g), null, [22, 60]), 'Applied Filters');
+  const k = [['Total market volume', nz(m.totCur), nz(m.totPrev), u], ['HPCL volume', nz(m.hp.cur), nz(m.hp.prev), u], ['HPCL market share %', nz(m.hp.share), nz(m.hp.prevShare), '%'],
+    ['HPCL volume growth %', nz(m.hp.growth), null, '%'], ['Market growth %', nz(m.mktGrowth), null, '%'], ['HPCL vs market growth (pp)', nz(m.hpVsMkt), null, 'pp'], ['HPCL share change (pp)', nz(m.hp.shareChg), null, 'pp'], ['HPCL rank', m.hp.rank, null, `of ${m.nOMC}`]];
+  XLSX.utils.book_append_sheet(wb, sheetFromRows(['KPI', 'Current', 'Previous year', 'Unit'], k, [null, V, V], [30, 16, 16, 10]), 'KPI Summary');
+  const pt = periodText(c), hdrNote = `${prodLabel(c.group)} | Current = ${pt.cur} | Hist. = ${pt.prev} | ${viewLabel()} | Share in %, G/L in pp`;
+  const geoR = stdGeoRows(g, c);
+  XLSX.utils.book_append_sheet(wb, stdSheet(geoR.rows, geoR.foot, u, g.kind === 'ro' ? 'SALES AREA' : 'DISTRICT', `OMC market share: ${g.label} | ${hdrNote}`), 'OMC Market Share');
+  XLSX.utils.book_append_sheet(wb, stdSheet(stdEntityRows('sa', c, 'ALL').rows, stdFootRows(c, 'ALL'), u, 'SALES AREA', `Sales Area analysis | ${hdrNote}`), 'Sales Area Analysis');
+  XLSX.utils.book_append_sheet(wb, stdSheet(stdEntityRows('district', c, 'ALL').rows, stdFootRows(c, 'ALL'), u, 'DISTRICT', `District analysis | ${hdrNote}`), 'District Analysis');
+  XLSX.utils.book_append_sheet(wb, stdSheet(stdProductRows(g, c, 'NATIVE'), [], null, 'PRODUCT', `Product analysis: ${g.label} | Current = ${pt.cur} | Hist. = ${pt.prev}`), 'Product Analysis');
+  const mM = stdMonthRows(g.dists, c, 'M'), mC = stdMonthRows(g.dists, c, 'C');
+  XLSX.utils.book_append_sheet(wb, stdSheet(mM, [], u, 'MONTH', `Monthly trend: ${g.label} | ${prodLabel(c.group)} | each month vs same month previous FY`), 'Monthly Trend');
+  XLSX.utils.book_append_sheet(wb, stdSheet(mC, [], u, 'PERIOD (CUM.)', `Cumulative trend: ${g.label} | ${prodLabel(c.group)} | cumulative from April vs same period previous FY`), 'Cumulative Trend');
+  const op = []; ['district', 'sa'].forEach(lv => attackRows(EN.entityRows(lv, c, 'ALL'), 1000).forEach(r => op.push([lv === 'sa' ? 'Sales Area' : 'District', r.rk, r.name, nz(r.mktCur), nz(r.hpCur), nz(r.share), nz(r.roShare), nz(r.shareGap), nz(r.mktGrowth), nz(r.hpGrowth), nz(r.opportunity)])));
+  XLSX.utils.book_append_sheet(wb, sheetFromRows(['Level', 'Rank', 'Name', `Market volume (${u})`, `HPCL volume (${u})`, 'HPCL share %', 'RO HPCL share %', 'Share gap (pp)', 'Market growth %', 'HPCL growth %', `Indicative opportunity volume (${u})`], op, [null, null, null, V, V, P, P, P, P, P, V], [11, 6, 34]), 'Opportunity Analysis');
+  // extra: normalised dataset for audit
+  const norm = [];
+  Object.entries(EN.cube).forEach(([fy, dd]) => Object.entries(dd).forEach(([dk, oo]) => Object.entries(oo).forEach(([o, pp]) => Object.entries(pp).forEach(([p, arr]) => { const di = DS.districtInfo[dk]; arr.forEach((val, i) => { if (val !== 0) norm.push([fy, MN[i], o, p, di.code ?? '', di.name, di.sa, val]); }); }))));
+  XLSX.utils.book_append_sheet(wb, sheetFromRows(['FY', 'Month', 'OMC', 'Product', 'District code', 'District', 'Sales Area', 'Volume MT'], norm, [null, null, null, null, null, null, null, '#,##0.000'], [9, 7, 8, 8, 12, 34, 24, 14]), 'Normalized Data');
+  XLSX.writeFile(wb, `Market_Share_Analysis_Y2_${S.fy.replace(/\s/g, '')}_${prodLabel(S.group).replace(/[^A-Za-z]/g, '')}_${periodText(c).cur.replace(/[^A-Za-z0-9]/g, '')}.xlsx`);
+}
+
+/* =====================================================================
+   EXPORT: PDF (management report)
+   ===================================================================== */
+const ps = s => String(s ?? '').replace(/[–—]/g, '-').replace(/→/g, 'to').replace(/−/g, '-').replace(/≥/g, '>=').replace(/<[^>]+>/g, '');
+function offscreenChart(builder) {
+  const stage = $('pdfStage'); stage.innerHTML = '<div style="width:1000px;height:400px"><canvas id="pdfC" width="1000" height="400"></canvas></div>';
+  const ch = builder('pdfC'); const img = ch ? ch.toBase64Image('image/png', 1) : null; if (ch) ch.destroy(); delete CH['pdfC']; stage.innerHTML = ''; return img;
+}
+async function exportPDF() {
+  const { jsPDF } = window.jspdf; const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+  const c = ctx(), g = geo(), m = EN.metrics(g.dists, c), u = c.unit, pt = periodText(c);
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = 36;
+  const head = { fillColor: [0, 59, 122], textColor: 255, fontStyle: 'bold' };
+  let y = 0;
+  const title = t => { if (y > H - 120) { doc.addPage(); y = M; } doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(0, 59, 122); doc.text(ps(t), M, y + 14); y += 22; doc.setTextColor(22, 33, 46); };
+  const tbl = (h, b, opts = {}) => { doc.autoTable({ head: [h.map(ps)], body: b.map(r => r.map(ps)), startY: y, margin: { left: M, right: M }, theme: 'grid', headStyles: head, styles: { fontSize: 8, cellPadding: 3 }, columnStyles: { 0: { halign: 'left' } }, ...opts }); y = doc.lastAutoTable.finalY + 14; };
+  const img = (src, h = 230) => { if (!src) return; if (y + h > H - M) { doc.addPage(); y = M; } doc.addImage(src, 'PNG', M, y, (W - 2 * M), h); y += h + 12; };
+  doc.setFillColor(0, 59, 122); doc.rect(0, 0, W, 54, 'F'); doc.setFillColor(227, 30, 36); doc.rect(0, 54, W, 4, 'F');
+  doc.setTextColor(255); doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text(ps(APP_TITLE), M, 26);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text(ps(`${APP_SUBTITLE} | ${prodLabel(c.group)} | ${g.label} | ${pt.cur} vs ${pt.prev} | ${u}`), M, 43);
+  y = 72;
+  title('1. Selected filters'); tbl(['Filter', 'Value'], appliedFilters(c, g).slice(1), { columnStyles: { 0: { cellWidth: 140 } } });
+  title('2. Executive KPI summary');
+  tbl(['Total market', 'HPCL volume', 'HPCL share', 'HPCL growth', 'Market growth', 'HPCL vs market', 'Share change', 'HPCL rank'],
+    [[fmtVol(m.totCur, u), fmtVol(m.hp.cur, u), fmtPct(m.hp.share), fmtG(m.hp.growth, 2), fmtG(m.mktGrowth, 2), fmtPP(m.hpVsMkt), fmtPP(m.hp.shareChg), m.hp.rank ? `#${m.hp.rank} of ${m.nOMC}` : 'N/A'],
+     [`PY ${fmtVol(m.totPrev, u)}`, `PY ${fmtVol(m.hp.prev, u)}`, `PY ${fmtPct(m.hp.prevShare)}`, '', '', '', '', '']]);
+  title('3. OMC market share (' + (S.view === 'PSU' ? 'PSU view' : 'all OMCs') + ')');
+  { const gr0 = stdGeoRows(g, c); y = stdPdfTable(doc, gr0.rows, gr0.foot, u, g.kind === 'ro' ? 'SALES AREA' : 'DISTRICT', y, M); }
+  doc.setFontSize(7.5); doc.setTextColor(90); doc.text(ps(`Current = ${pt.cur}; Hist. = ${pt.prev}. % GR = volume growth %, market share in %, G/L in percentage points.`), M, y - 6); y += 4; doc.setTextColor(22, 33, 46);
+  title(`4. HPCL share trend (${S.trendMode === 'C' ? 'cumulative' : 'monthly'})`);
+  img(offscreenChart(id => { chartShareTrend(id, g.dists, c, g, S.trendMode); return CH[id]; }));
+  title('5. Product performance (MS/HSD/TMF in KL, CNG+CBG in KG)');
+  y = stdPdfTable(doc, stdProductRows(g, c, 'NATIVE'), [], null, 'PRODUCT', y, M);
+  const lvl = breakdownLevel(); const er = EN.entityRows(lvl, c, lvl === 'district' && g.kind !== 'ro' ? g.sa : 'ALL');
+  const erSA = EN.entityRows('sa', c);
+  title('6. Sales Area performance');
+  y = stdPdfTable(doc, stdEntityRows('sa', c, 'ALL').rows, stdFootRows(c, 'ALL'), u, 'SALES AREA', y, M);
+  const erD = EN.entityRows('district', c, g.kind !== 'ro' ? g.sa : 'ALL');
+  title('6b. District performance');
+  { const saF = g.kind !== 'ro' ? g.sa : 'ALL'; const sr = stdEntityRows('district', c, saF).rows.sort((a, b) => b.mktCur - a.mktCur); y = stdPdfTable(doc, sr, stdFootRows(c, saF), u, 'DISTRICT', y, M); }
+  const gl = gainLose(erD, 10);
+  title('7. Biggest share gainers (districts)'); tbl(['Rank', 'District', 'Previous share', 'Current share', 'Change'], gl.gain.map(r => [r.rk, r.name, fmtPct(r.prevShare), fmtPct(r.share), fmtPP(r.shareChg)]));
+  title('8. Biggest share losers (districts)'); tbl(['Rank', 'District', 'Previous share', 'Current share', 'Change'], gl.lose.map(r => [r.rk, r.name, fmtPct(r.prevShare), fmtPct(r.share), fmtPP(r.shareChg)]));
+  title('9. Top 10 attack opportunities - indicative opportunity volume (not guaranteed)');
+  tbl(['Rank', 'District', `Market (${u})`, `HPCL (${u})`, 'HPCL share', 'RO share', 'Gap (pp)', 'Market growth', 'HPCL growth', `Indicative opp. (${u})`], attackRows(erD, 10).map(r => [r.rk, r.name, fmtVol(r.mktCur), fmtVol(r.hpCur), fmtPct(r.share), fmtPct(r.roShare), r.shareGap.toFixed(2), fmtG(r.mktGrowth), fmtG(r.hpGrowth), fmtVol(r.opportunity)]));
+  title('10. Executive insights');
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+  buildInsights(c, g, m).forEach(i => { const lines = doc.splitTextToSize('- ' + ps(i.t.replace(/<[^>]+>/g, '')), W - 2 * M); if (y + lines.length * 12 > H - M) { doc.addPage(); y = M; } doc.text(lines, M, y + 10); y += lines.length * 12 + 4; });
+  const n = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= n; i++) { doc.setPage(i); doc.setFontSize(8); doc.setTextColor(120); doc.text(ps(`Market Share Analysis from Y2 Figures | v${APP_VERSION} | Source: ${FILE} (${SOURCE_MODE}) | ${viewLabel()} | Page ${i} of ${n}`), M, H - 16); }
+  doc.save(`Market_Share_Analysis_Y2_Report_${S.fy.replace(/\s/g, '')}_${pt.cur.replace(/[^A-Za-z0-9]/g, '')}.pdf`);
+}
+
+/* =====================================================================
+   LOAD WORKBOOK  (automatic from the repository, or manual upload)
+   Everything runs in the browser; the workbook is never sent anywhere.
+   ===================================================================== */
+let SOURCE_MODE = '';            // 'Automatically loaded' | 'User uploaded'
+let USER_UPLOADED = false;       // manual upload wins for this session
+const DEFAULT_NAME = decodeURIComponent(DEFAULT_WORKBOOK.split('/').pop());
+const STEPS = ['Loading market data...', 'Reading workbook...', 'Building market-share calculations...', 'Dashboard ready'];
+const tick = () => new Promise(r => setTimeout(r, 30));   // let the browser paint each step
+function showLoading(on) { $('loading').classList.toggle('hidden', !on); }
+function setStep(n) {
+  $('ldSteps').innerHTML = STEPS.map((t, i) => `<li class="${i < n ? 'done' : i === n ? (n === STEPS.length - 1 ? 'done' : 'active') : ''}"><span class="dot"></span>${t}</li>`).join('');
+}
+function showUploadScreen(title, detail, err) {
+  showLoading(false);
+  if (!DS) $('srcLine').textContent = 'No workbook loaded | default data unavailable, upload the Excel file';
+  $('emptyTitle').textContent = title; $('emptyDetail').innerHTML = detail || ''; $('loadErr').textContent = err || '';
+  $('empty').classList.remove('hidden');
+}
+// Parse + build engine + render. Throws a user-readable Error on failure.
+function applyWorkbook(buf, name, mode) {
+  if (!window.XLSX) throw new Error('The Excel reader (SheetJS) could not be loaded. Check the internet connection and refresh the page.');
+  let wb;
+  try { wb = XLSX.read(buf, { type: 'array' }); } catch (e) { throw new Error(`"${name}" could not be read as an Excel workbook.`); }
+  const ds = parseWorkbook(wb, XLSX);
+  if (!ds.fys.length || !ds.raw.length) throw new Error(`No usable FY sheets found in "${name}". Sheets must be named like "FY 26-27" and contain COMNAME, PRODNAME, DISTNAME and month columns.`);
+  DS = ds; EN = new Engine(ds); FILE = name; SOURCE_MODE = mode;
+  const cur = ds.fys[ds.fys.length - 1];
+  S.fy = cur.label; S.to = Math.max(cur.latestMonth, 0); S.from = 0; S.cat = 'ALL'; S.vDist = null; S.vMonth = null; S.lk = { fy: null, omc: null, prod: ds.products[0], dist: null };
+  Object.keys(TBL).forEach(k => delete TBL[k]); Object.keys(STD).forEach(k => delete STD[k]);
+  showLoading(false); $('empty').classList.add('hidden'); $('loadErr').textContent = '';
+  $('view').classList.remove('hidden'); $('filters').classList.remove('hidden');
+  $('btnXlsx').disabled = false; $('btnPdf').disabled = !window.jspdf;
+  $('srcLine').textContent = `Source: ${name} | ${mode} | ${ds.fys.map(f => f.label).join(', ')} | data to ${mLabel(cur.label, cur.latestMonth)} | ${ds.warnings.length} warning(s)` + (ds.unmappedProductCount ? ` | ${ds.unmappedProductCount} product name(s) not recognised, see Data Validation` : '');
+  $('appFoot').textContent = `Market Share Analysis from Y2 Figures | v${APP_VERSION} | Source: ${name} (${mode})`;
+  syncFilters(); render();
+}
+// Automatic load of the repository workbook (relative path, works under any GitHub Pages project URL)
+async function loadDefaultWorkbook() {
+  setStep(0); showLoading(true);
+  const slow = setTimeout(() => $('ldSteps').classList.add('slow'), 1000);
+  try {
+    if (location.protocol === 'file:') throw new Error('opened-from-disk');
+    const url = new URL(DEFAULT_WORKBOOK, document.baseURI);
+    url.searchParams.set('v', APP_VERSION);
+    const response = await fetch(url.href, { cache: 'no-store' });     // always the latest file after a refresh
+    if (!response.ok) throw new Error(`Default workbook not found: ${response.status}`);
+    const buffer = await response.arrayBuffer();
+    if (USER_UPLOADED) return;                                          // manual upload already took over
+    setStep(1); await tick();
+    const bytes = new Uint8Array(buffer);
+    setStep(2); await tick();
+    if (USER_UPLOADED) return;
+    applyWorkbook(bytes, DEFAULT_NAME, 'Automatically loaded');
+    setStep(3);
+  } catch (e) {
+    console.warn('Default workbook not loaded:', e);
+    if (USER_UPLOADED || DS) return;
+    const local = e.message === 'opened-from-disk';
+    showUploadScreen('Default market data could not be loaded.',
+      local ? `The page was opened directly from disk, where browsers block automatic loading. Default workbook could not be loaded. Please upload the Excel file manually (or open the GitHub Pages address).`
+            : `Please ensure <code>${esc(DEFAULT_NAME)}</code> is present in the same GitHub repository folder as <code>index.html</code>. Default workbook could not be loaded. Please upload the Excel file manually.`,
+      /^(The Excel reader|No usable FY|".*" could not be read)/.test(e.message) ? e.message : '');
+  } finally { clearTimeout(slow); }
+}
+// Manual upload (fallback, and takes priority for the rest of the session)
+function readFile(file) {
+  if (!file) return;
+  USER_UPLOADED = true;
+  const hadData = !!DS;
+  if (!hadData) { $('empty').classList.add('hidden'); setStep(1); showLoading(true); }
+  const r = new FileReader();
+  r.onload = async e => {
+    try { setStep(2); await tick(); applyWorkbook(new Uint8Array(e.target.result), file.name, 'User uploaded'); }
+    catch (err) { console.error(err); if (hadData) alert(err.message + '\nThe previously loaded data is still shown.'); else showUploadScreen('This workbook could not be used.', '', err.message); }
+  };
+  r.onerror = () => { if (hadData) alert('The file could not be read.'); else showUploadScreen('This workbook could not be used.', '', 'The file could not be read.'); };
+  r.readAsArrayBuffer(file);
+}
+document.title = 'Market Share Analysis from Y2 Figures | HPCL Raipur Retail Region';
+$('appTitle').textContent = APP_TITLE;
+$('appFoot').textContent = `Market Share Analysis from Y2 Figures | v${APP_VERSION}`;
+$('btnUpload').onclick = $('btnUpload2').onclick = () => $('fileIn').click();
+$('fileIn').onchange = e => { readFile(e.target.files[0]); e.target.value = ''; };
+const dz = $('empty');
+['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('drag'); }));
+['dragleave', 'drop'].forEach(ev => document.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('drag'); }));
+document.addEventListener('drop', e => { const f = e.dataTransfer && e.dataTransfer.files[0]; if (f) readFile(f); });
+$('btnXlsx').onclick = () => { try { exportExcel(); } catch (e) { alert('Excel export failed: ' + e.message); console.error(e); } };
+$('btnPdf').onclick = () => { try { exportPDF(); } catch (e) { alert('PDF export failed: ' + e.message); console.error(e); } };
+wireFilters();
+
+/* =====================================================================
+   STANDARD ANALYSIS FORMAT
+   REGION | HPC [SALES: Current Hist. %GR | MARKET SHARE: Current Hist. G/L] | BPC [...] | IOC [...]
+   ===================================================================== */
+CONFIG.stdOrder = ['HPCL', 'BPCL', 'IOCL'];
+CONFIG.stdPrivateOrder = ['RIL', 'NEL'];   // shown in All-OMC view, then any other OMC found
+CONFIG.stdShort = { HPCL: 'HPC', BPCL: 'BPC', IOCL: 'IOC', RIL: 'REL', NEL: 'NAYARA' };
+const shortOMC = o => CONFIG.stdShort[o] || o;
+S.stdExtra = false;   // optional "TOTAL MARKET" column group
+
+function stdGroups() {
+  // PSU view: HPC, BPC, IOC. All-OMC view: the same, followed by every other OMC in the file (REL, NAYARA, any new OMC).
+  const psu = CONFIG.stdOrder.filter(o => DS.omcs.includes(o));
+  const rest = DS.omcs.filter(o => !CONFIG.stdOrder.includes(o) && !CONFIG.psuOMCs.includes(o));
+  const others = S.view === 'ALL' ? [...CONFIG.stdPrivateOrder.filter(o => rest.includes(o)), ...rest.filter(o => !CONFIG.stdPrivateOrder.includes(o))] : [];
+  const g = [...psu, ...others].map(o => ({ key: o, label: shortOMC(o), type: 'omc' }));
+  if (S.stdExtra) g.push({ key: 'MKT', label: 'TOTAL MARKET', type: 'mkt' });
+  return g;
+}
+// one table row from an engine metrics object
+function stdRow(label, m, extra = {}) {
+  const r = { label, ...extra };
+  stdGroups().forEach(gr => {
+    let cur, prev, sh, psh;
+    if (gr.type === 'omc') { const x = m.rows.find(y => y.omc === gr.key) || { cur: 0, prev: m.pyOK ? 0 : null }; cur = x.cur; prev = x.prev; }
+    else if (gr.type === 'oth') { const xs = m.rows.filter(y => !CONFIG.psuOMCs.includes(y.omc)); cur = xs.reduce((a, y) => a + y.cur, 0); prev = m.pyOK ? xs.reduce((a, y) => a + y.prev, 0) : null; }
+    else { cur = m.totCur; prev = m.totPrev; }
+    sh = sharePct(cur, m.totCur); psh = m.pyOK ? sharePct(prev, m.totPrev) : null;
+    r[gr.key + '_cur'] = cur; r[gr.key + '_prev'] = prev; r[gr.key + '_gr'] = m.pyOK ? growthPct(cur, prev) : null;
+    r[gr.key + '_sh'] = sh; r[gr.key + '_psh'] = psh; r[gr.key + '_gl'] = diff(sh, psh);
+  });
+  return r;
+}
+const stdSub = gr => gr.type === 'mkt'
+  ? [['_cur', 'Current', 'v'], ['_prev', 'Hist.', 'v'], ['_gr', '% GR', 'g']]
+  : [['_cur', 'Current', 'v'], ['_prev', 'Hist.', 'v'], ['_gr', '% GR', 'g'], ['_sh', 'Current', 's'], ['_psh', 'Hist.', 's'], ['_gl', 'G/L', 'gl']];
+const stdFmt = (v, t) => v == null || !isFinite(v) ? 'N/A' : t === 'v' ? fmtVol(v) : t === 's' ? v.toFixed(2) : t === 'g' ? sgn(v) + Math.abs(v).toFixed(1) : sgn(v) + Math.abs(v).toFixed(2);
+
+const STD = {};
+/* rows: [{label, ...stdRow fields, _ref}] ; opts: {unit, regionLabel, foot:[rows], onRow, isSel, sort, note} */
+function mountStd(elId, rows, opts = {}) { STD[elId] = { rows, opts, sort: (STD[elId] && STD[elId].sort) || opts.sort || null }; drawStd(elId); }
+function drawStd(elId) {
+  const t = STD[elId], el = $(elId); if (!t || !el) return;
+  const groups = stdGroups(), o = t.opts;
+  let rows = t.rows.slice();
+  if (t.sort) { const { key, dir } = t.sort; rows.sort((a, b) => { const va = a[key], vb = b[key]; if (va == null && vb == null) return 0; if (va == null) return 1; if (vb == null) return -1; return (typeof va === 'string' ? va.localeCompare(vb) : va - vb) * dir; }); }
+  const glMax = {}; groups.forEach(gr => { const vs = rows.map(r => r[gr.key + '_gl']).filter(v => v != null && isFinite(v)).map(Math.abs); glMax[gr.key] = vs.length ? Math.max(...vs) : 0; });
+  const sortMark = k => t.sort && t.sort.key === k ? ` data-sorted="${t.sort.dir > 0 ? '▲' : '▼'}"` : '';
+  const salesHdr = o.unit ? `SALES (${o.unit})` : 'SALES';
+  const h1 = `<th class="l rg" rowspan="3" data-k="label"${sortMark('label')}>${esc(o.regionLabel || 'REGION')}</th>` + groups.map((gr, i) => `<th class="grp g${i % 2} ${gr.key === CONFIG.focusOMC ? 'ghp' : ''}" colspan="${stdSub(gr).length}">${esc(gr.label)}</th>`).join('');
+  const h2 = groups.map((gr, i) => `<th class="sg g${i % 2}" colspan="3">${salesHdr}</th>` + (gr.type === 'mkt' ? '' : `<th class="sg g${i % 2}" colspan="3">MARKET SHARE</th>`)).join('');
+  const h3 = groups.map((gr, i) => stdSub(gr).map(([sfx, lab], j) => `<th class="g${i % 2} ${j === 0 ? 'bl' : ''}" data-k="${gr.key + sfx}"${sortMark(gr.key + sfx)} title="Sort by ${esc(gr.label)} ${lab}">${lab}</th>`).join('')).join('');
+  const cells = (r, foot) => `<td class="l rg">${esc(r.label)}${r.sub ? `<div class="note">${esc(r.sub)}</div>` : ''}</td>` + groups.map((gr, i) => stdSub(gr).map(([sfx, , ty], j) => {
+    const v = r[gr.key + sfx]; let st = '', c = (j === 0 ? 'bl ' : '') + (gr.key === CONFIG.focusOMC ? 'hpc ' : '');
+    if (ty === 'g') c += cls(v);
+    if (ty === 'gl' && !foot && v != null && glMax[gr.key] > 0) { const a = 0.06 + 0.34 * Math.abs(v) / glMax[gr.key]; st = v > 0 ? `background:rgba(28,122,74,${a.toFixed(3)})` : v < 0 ? `background:rgba(196,43,34,${a.toFixed(3)})` : ''; }
+    if (ty === 'gl' && foot) c += cls(v);
+    return `<td class="${c}" style="${st}">${stdFmt(v, ty)}</td>`;
+  }).join('')).join('');
+  const body = rows.map((r, i) => `<tr data-i="${i}" class="${o.onRow ? 'click' : ''} ${o.isSel && o.isSel(r) ? 'sel' : ''}">${cells(r)}</tr>`).join('') || `<tr><td class="l" colspan="99">No data for the current selection.</td></tr>`;
+  const foot = (o.foot || []).map(r => `<tr>${cells(r, true)}</tr>`).join('');
+  el.innerHTML = `<div class="tw"><table class="t std"><thead><tr>${h1}</tr><tr>${h2}</tr><tr>${h3}</tr></thead><tbody>${body}</tbody>${foot ? `<tfoot>${foot}</tfoot>` : ''}</table></div>
+    <div class="stdnote"><span>Current = ${esc(o.curLbl || '')}; Hist. = ${esc(o.prevLbl || '')}. Sales in ${esc(o.unit || 'units shown per row')}; % GR = volume growth %; market share in %; G/L = gain/loss in percentage points. ${S.view === 'PSU' ? 'PSU view: shares of HPC+BPC+IOC total.' : 'All-OMC view: shares of all-OMC total, so the shares in a row add up to 100.'}</span>
+    <label><input type="checkbox" class="stdx" ${S.stdExtra ? 'checked' : ''}> Show Total Market columns</label></div>`;
+  el.querySelectorAll('th[data-k]').forEach(h => h.onclick = () => { const k = h.dataset.k; t.sort = t.sort && t.sort.key === k ? { key: k, dir: -t.sort.dir } : { key: k, dir: k === 'label' ? 1 : -1 }; drawStd(elId); });
+  if (o.onRow) el.querySelectorAll('tbody tr[data-i]').forEach(tr => tr.onclick = () => o.onRow(rows[+tr.dataset.i]));
+  el.querySelector('.stdx').onchange = e => { S.stdExtra = e.target.checked; render(); };
+}
+
+/* ---- row builders used by tabs and exports ---- */
+function stdEntityRows(level, c, saFilter) {
+  const er = EN.entityRows(level, c, saFilter);
+  return { er, rows: er.rows.map(r => stdRow(r.name, EN.metrics(r.dists, c), { id: r.id, type: r.type, sa: r.sa, mktCur: r.mktCur })) };
+}
+function stdFootRows(c, saFilter) {
+  const f = [];
+  if (saFilter && saFilter !== 'ALL') f.push(stdRow(saFilter + ' total', EN.metrics(EN.saDistricts(saFilter), c)));
+  f.push(stdRow('Complete Raipur RO', EN.metrics(EN.roDistricts(), c)));
+  return f;
+}
+function stdProductRows(g, c, mode) {
+  return ['MS', 'HSD', 'TMF', 'GAS'].filter(k => CONFIG.groups[k].prods.some(p => DS.products.includes(p))).map(k => {
+    const unit = mode === 'MT' ? 'MT' : CONFIG.nativeUnit[k];
+    return stdRow(`${prodLabel(k)} (${unit})`, EN.metrics(g.dists, { ...c, group: k, unit }), { key: k });
+  });
+}
+function stdMonthRows(dists, c, mode) {
+  return EN.series(dists, c, mode).filter(s => s.hasCur).map(s => stdRow(mode === 'C' ? `${MN[0]}–${MN[s.i]}` : mLabel(c.fy, s.i), s.m, { i: s.i }));
+}
+// geography hierarchy for the Market Share tab
+function stdGeoRows(g, c) {
+  if (g.kind === 'ro') return { rows: EN.saList().map(sa => stdRow(sa, EN.metrics(EN.saDistricts(sa), c), { id: sa, type: 'sa' })), foot: [stdRow('Complete Raipur RO', EN.metrics(EN.roDistricts(), c))] };
+  if (g.kind === 'sa') return { rows: EN.saDistricts(g.sa).map(k => stdRow(DS.districtInfo[k].name, EN.metrics([k], c), { id: k, type: 'district' })), foot: stdFootRows(c, g.sa) };
+  return { rows: [stdRow(g.label, EN.metrics(g.dists, c), { id: g.dists[0], type: 'district' })], foot: stdFootRows(c, g.sa) };
+}
+
+/* ---- export helpers: 3-row header as array-of-arrays + merges ---- */
+function stdAOA(rows, foot, unit, regionLabel) {
+  const groups = stdGroups();
+  const r1 = [regionLabel || 'REGION'], r2 = [''], r3 = [''], merges = [{ s: { r: 0, c: 0 }, e: { r: 2, c: 0 } }];
+  let col = 1;
+  groups.forEach(gr => {
+    const subs = stdSub(gr); r1.push(gr.label, ...Array(subs.length - 1).fill(''));
+    merges.push({ s: { r: 0, c: col }, e: { r: 0, c: col + subs.length - 1 } });
+    r2.push(unit ? `SALES (${unit})` : 'SALES', '', ''); merges.push({ s: { r: 1, c: col }, e: { r: 1, c: col + 2 } });
+    if (gr.type !== 'mkt') { r2.push('MARKET SHARE', '', ''); merges.push({ s: { r: 1, c: col + 3 }, e: { r: 1, c: col + 5 } }); }
+    subs.forEach(([, lab]) => r3.push(lab)); col += subs.length;
+  });
+  const body = rows.concat(foot || []).map(r => [r.label, ...groups.flatMap(gr => stdSub(gr).map(([sfx]) => { const v = r[gr.key + sfx]; return v == null || !isFinite(v) ? null : v; }))]);
+  const types = ['', ...groups.flatMap(gr => stdSub(gr).map(x => x[2]))];
+  return { aoa: [r1, r2, r3, ...body], merges, types, nHead: 3 };
+}
+function stdSheet(rows, foot, unit, regionLabel, title) {
+  const { aoa, merges, types } = stdAOA(rows, foot, unit, regionLabel);
+  const pre = title ? [[title], []] : []; const off = pre.length;
+  const ws = XLSX.utils.aoa_to_sheet([...pre, ...aoa]);
+  ws['!merges'] = merges.map(m => ({ s: { r: m.s.r + off, c: m.s.c }, e: { r: m.e.r + off, c: m.e.c } }));
+  const fmt = { v: '#,##0.00', s: '0.00', g: '+0.0;-0.0;0.0', gl: '+0.00;-0.00;0.00' };
+  for (let r = off + 3; r < off + aoa.length; r++) types.forEach((t, c) => { const a = XLSX.utils.encode_cell({ r, c }); if (ws[a] && typeof ws[a].v === 'number' && fmt[t]) ws[a].z = fmt[t]; });
+  ws['!cols'] = types.map((t, i) => ({ wch: i === 0 ? 34 : t === 'v' ? 13 : 9 }));
+  return ws;
+}
+function stdPdfTable(doc, rows, foot, unit, regionLabel, startY, M) {
+  const groups = stdGroups();
+  const head = [[{ content: regionLabel || 'REGION', rowSpan: 3 }, ...groups.map(gr => ({ content: gr.label, colSpan: stdSub(gr).length, styles: { halign: 'center' } }))],
+    groups.flatMap(gr => [{ content: unit ? `SALES (${unit})` : 'SALES', colSpan: 3, styles: { halign: 'center' } }, ...(gr.type === 'mkt' ? [] : [{ content: 'MARKET SHARE', colSpan: 3, styles: { halign: 'center' } }])]),
+    groups.flatMap(gr => stdSub(gr).map(x => x[1]))];
+  const body = rows.concat(foot || []).map((r, ri) => [ps(r.label), ...groups.flatMap(gr => stdSub(gr).map(([sfx, , ty]) => stdFmt(r[gr.key + sfx], ty)))]);
+  const nFoot = (foot || []).length;
+  doc.autoTable({ head, body, startY, margin: { left: M, right: M }, theme: 'grid', headStyles: { fillColor: [0, 59, 122], textColor: 255, fontStyle: 'bold', halign: 'center', fontSize: 6.5 },
+    styles: { fontSize: 6.5, cellPadding: 2, halign: 'right' }, columnStyles: { 0: { halign: 'left', cellWidth: 96 } },
+    didParseCell: d => { if (d.section === 'body' && d.row.index >= body.length - nFoot) { d.cell.styles.fontStyle = 'bold'; d.cell.styles.fillColor = [238, 242, 247]; } } });
+  return doc.lastAutoTable.finalY + 14;
+}
+
+// Start: try the repository workbook automatically (manual upload remains available).
+loadDefaultWorkbook();
+</script>
+</body>
+</html>
